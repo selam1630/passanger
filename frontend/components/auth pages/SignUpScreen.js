@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
-
+import { Picker } from '@react-native-picker/picker';
 export default function SignUpScreen() {
   const navigation = useNavigation();
   const [fullName, setFullName] = useState('');
@@ -23,38 +23,42 @@ export default function SignUpScreen() {
   const [nationalID, setNationalID] = useState('');
   const [role, setRole] = useState('');
 
-  const handleSignUp = async () => {
-    try {
-      const response = await fetch('http://localhost:5000/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          fullName,
-          email,
-          password,
-          phone,
-          nationalID,
-          role,
-        }),
-      });
+ const handleSignUp = async () => {
+  if (!fullName || !email || !password || !phone || !nationalID || !role) {
+    Alert.alert('Missing Information', 'Please fill in all fields before signing up.');
+    return; 
+  }
 
-      const data = await response.json();
+  try {
+    const response = await fetch('http://localhost:5000/api/auth/register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        fullName,
+        email,
+        password,
+        phone,
+        nationalID,
+        role,
+      }),
+    });
 
-      if (response.ok) {
-        console.log('Registration successful:', data);
-        navigation.navigate('VerifyOtp', { phone });
-      } else {
-        console.error('Registration failed:', data.message || data);
-        Alert.alert('Error', data.message || 'Registration failed');
-      }
-    } catch (error) {
-      console.error('Error registering:', error);
-      Alert.alert('Error', 'An error occurred. Please try again.');
+    const data = await response.json();
+
+    if (response.ok) {
+      console.log('Registration successful:', data);
+      navigation.navigate('VerifyOtp', { phone });
+    } else {
+      console.error('Registration failed:', data.message || data);
+      Alert.alert('Error', data.message || 'Registration failed');
     }
-  };
-
+  } catch (error) {
+    console.error('Error registering:', error);
+    Alert.alert('Error', 'An error occurred. Please try again.');
+  }
+};
   return (
     <LinearGradient colors={['#0A122D', '#0A122D']} style={styles.container}>
       <StatusBar barStyle="light-content" />
@@ -109,14 +113,19 @@ export default function SignUpScreen() {
               value={password}
               onChangeText={setPassword}
             />
-            <TextInput
-              style={styles.input}
-              placeholder="Role"
-              placeholderTextColor="#ccc"
-              value={role}
-              onChangeText={setRole}
-            />
-
+            <View style={styles.pickerContainer}>
+  <Picker
+    selectedValue={role}
+    onValueChange={(itemValue) => setRole(itemValue)}
+    style={styles.input}
+    dropdownIconColor="#FFA500"
+  >
+    <Picker.Item label="Select Role" value="" color="#ccc" />
+    <Picker.Item label="Carrier" value="carrier" color="#fff" />
+    <Picker.Item label="Sender" value="sender" color="#fff" />
+    <Picker.Item label="Receiver" value="receiver" color="#fff" />
+  </Picker>
+</View>
             <TouchableOpacity style={styles.signUpBtn} onPress={handleSignUp}>
               <Text style={styles.signUpText}>Sign Up</Text>
             </TouchableOpacity>
