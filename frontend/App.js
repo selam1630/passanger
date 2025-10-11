@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import LandingPage from './components/LandingPage';
 import SignUpScreen from './components/auth pages/SignUpScreen';
 import SignInScreen from './components/auth pages/SignInScreen';
+import VerifyOtpScreen from './components/auth pages/VerifyOtpScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -14,6 +15,7 @@ export default function App() {
         <Stack.Screen name="Landing" component={LandingPage} />
         <Stack.Screen name="SignUp" component={SignUpScreen} />
         <Stack.Screen name="SignIn" component={SignInScreen} />
+        <Stack.Screen name="VerifyOtp" component={VerifyOtpScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -1,6 +1,9 @@
 import prisma from '../config/db.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { sendSms } from './smsController.js';
+import crypto from 'crypto'; 
+
 export const register = async (req, res) => {
   try {
     const { fullName, email, password, phone, nationalID, role } = req.body;
@@ -21,15 +24,26 @@ export const register = async (req, res) => {
         nationalID,
         role,
         nationalIDVerified: false,
+        phoneVerified: false,
       },
     });
+    const otp = crypto.randomInt(100000, 999999).toString();
+    const expiryTime = new Date(Date.now() + 5 * 60 * 1000);
+    await prisma.user.update({
+      where: { id: newUser.id },
+      data: { otpCode: otp, otpExpiry: expiryTime },
+    });
+
+    await sendSms(phone, `Your FlightBridge verification code is ${otp}`);
     const token = jwt.sign(
       { id: newUser.id },
       process.env.JWT_SECRET,
       { expiresIn: '1d' }
     );
-
-    res.status(201).json({ token });
+    res.status(201).json({
+      message: 'User registered successfully. OTP sent to your phone.',
+      token,
+    });
   } catch (error) {
     console.error('Error during registration:', error.message);
     res.status(500).json({ message: 'Something went wrong.' });
@@ -38,13 +52,17 @@ export const register = async (req, res) => {
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
+
     const user = await prisma.user.findUnique({
       where: { email },
     });
+
     if (!user) {
       return res.status(400).json({ message: 'Invalid email or password.' });
     }
+
     const isPasswordValid = await bcrypt.compare(password, user.password);
+
     if (!isPasswordValid) {
       return res.status(400).json({ message: 'Invalid email or password.' });
     }
@@ -55,6 +73,7 @@ export const login = async (req, res) => {
     );
 
     res.status(200).json({ token });
+
   } catch (error) {
     console.error('Error during login:', error.message);
     res.status(500).json({ message: 'Server error, please try again later.' });

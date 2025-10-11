@@ -1,37 +1,44 @@
 import React, { useState } from 'react';
-import {View,Text,TextInput,TouchableOpacity,StyleSheet,StatusBar,ScrollView,KeyboardAvoidingView,Platform,} from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  StatusBar,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
-
 export default function SignInScreen() {
   const navigation = useNavigation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
- const handleSignIn = async () => {
-  try {
-    const response = await fetch('http://localhost:5000/api/auth/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        email,
-        password,
-      }),
-    });
-    const data = await response.json();
-    if (response.ok) {
-      console.log('Login successful:', data);
-      navigation.navigate('Home');
-    } else {
-      console.error('Login failed:', data.message || data);
-      alert(data.message || 'Login failed');
+  const [message, setMessage] = useState(''); 
+  const handleSignIn = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        console.log('Login successful:', data);
+        setMessage('Login successful!');
+        navigation.navigate('Home');
+      } else {
+        console.error('Login failed:', data.message || data);
+        setMessage(data.message || 'Login failed');
+      }
+    } catch (error) {
+      console.error('Error logging in:', error);
+      setMessage('An error occurred. Please try again.');
     }
-  } catch (error) {
-    console.error('Error logging in:', error);
-    alert('An error occurred. Please try again.');
-  }
-};
+  };
+
   return (
     <LinearGradient colors={['#0A122D', '#0A122D']} style={styles.container}>
       <StatusBar barStyle="light-content" />
@@ -45,11 +52,24 @@ export default function SignInScreen() {
         >
           <View style={styles.card}>
             {/* Logo */}
-            <Text style={styles.logo}>FlyBridge</Text>
 
             {/* Titles */}
             <Text style={styles.title}>Welcome Back</Text>
             <Text style={styles.subtitle}>Sign in to continue your journey</Text>
+
+            {/* Feedback Message */}
+            {message ? (
+              <Text
+                style={{
+                  color: message.includes('successful') ? 'green' : 'red',
+                  textAlign: 'center',
+                  marginBottom: 15,
+                  fontSize: 16,
+                }}
+              >
+                {message}
+              </Text>
+            ) : null}
 
             {/* Inputs */}
             <TextInput
@@ -90,9 +110,7 @@ export default function SignInScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   scroll: {
     flexGrow: 1,
     justifyContent: 'center',
@@ -104,7 +122,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 25,
     width: '90%',
-    maxWidth: 450, 
+    maxWidth: 450,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.3,
@@ -162,13 +180,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 25,
   },
-  footerText: {
-    color: 'white',
-    fontSize: 16,
-  },
-  link: {
-    color: '#FFA500',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
+  footerText: { color: 'white', fontSize: 16 },
+  link: { color: '#FFA500', fontWeight: 'bold', fontSize: 16 },
 });
