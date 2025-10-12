@@ -6,6 +6,7 @@ import otpRoute from './routes/otpRoute.js';
 import smsRoute from './routes/smsRoute.js';
 import flightRoute from './routes/flightRoute.js';
 import testRoute from './routes/testRoute.js';
+import senderRoute from './routes/senderRoute.js';
 
 dotenv.config();
 
@@ -17,6 +18,8 @@ app.use('/api/auth', authRoute);
 app.use('/api/otp', otpRoute);
 app.use('/api/sms', smsRoute);
 app.use('/api/flights', flightRoute);
+app.use('/api/sender', senderRoute);
+
 app.use('/api', testRoute);
 
 const PORT = process.env.PORT || 5000;

@@ -19,7 +19,9 @@ model User {
   otpCode              String?   
   otpExpiry            DateTime? 
   createdAt            DateTime @default(now())
-  flights       Flight[]    @relation("UserFlights")
+   flights       Flight[]     @relation("UserFlights")      
+  sentShipments Shipment[]   @relation("SenderShipments")
+  carriedShipments Shipment[] @relation("CarrierShipments") 
 
 }
 model Flight {
@@ -34,5 +36,25 @@ model Flight {
   updatedAt     DateTime @updatedAt
 
   carrier       User     @relation("UserFlights", fields: [carrierId], references: [id])
+  shipments     Shipment[]
 }
 
+model Shipment {
+  id                   String   @id @default(auto()) @map("_id") @db.ObjectId
+  senderId             String   @db.ObjectId
+  carrierId            String   @db.ObjectId
+  flightId             String   @db.ObjectId
+  acceptorName         String
+  acceptorPhone        String
+  acceptorNationalID   String
+  itemWeight           Float
+  acceptorVerified     Boolean  @default(false)
+  verificationCode     String? 
+  verificationExpiry   DateTime?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  sender   User   @relation("SenderShipments", fields: [senderId], references: [id])
+  carrier  User   @relation("CarrierShipments", fields: [carrierId], references: [id])
+  flight   Flight @relation(fields: [flightId], references: [id])
+}
