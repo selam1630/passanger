@@ -19,4 +19,20 @@ model User {
   otpCode              String?   
   otpExpiry            DateTime? 
   createdAt            DateTime @default(now())
+  flights       Flight[]    @relation("UserFlights")
+
 }
+model Flight {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  carrierId     String   @db.ObjectId
+  from          String
+  to            String
+  departureDate DateTime
+  availableKg   Float
+  status        String   @default("on-time")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  carrier       User     @relation("UserFlights", fields: [carrierId], references: [id])
+}
+

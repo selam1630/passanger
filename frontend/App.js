@@ -5,6 +5,7 @@ import LandingPage from './components/LandingPage';
 import SignUpScreen from './components/auth pages/SignUpScreen';
 import SignInScreen from './components/auth pages/SignInScreen';
 import VerifyOtpScreen from './components/auth pages/VerifyOtpScreen';
+import CarrierDashboard from './components/carrier/CarrierDashboard';
 
 const Stack = createNativeStackNavigator();
 
@@ -15,6 +16,7 @@ export default function App() {
         <Stack.Screen name="Landing" component={LandingPage} />
         <Stack.Screen name="SignUp" component={SignUpScreen} />
         <Stack.Screen name="SignIn" component={SignInScreen} />
+        <Stack.Screen name="CarrierDashboard" component={CarrierDashboard} />
         <Stack.Screen name="VerifyOtp" component={VerifyOtpScreen} />
       </Stack.Navigator>
     </NavigationContainer>

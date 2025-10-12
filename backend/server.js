@@ -4,6 +4,8 @@ import dotenv from 'dotenv';
 import authRoute from './routes/authRoute.js';
 import otpRoute from './routes/otpRoute.js';
 import smsRoute from './routes/smsRoute.js';
+import flightRoute from './routes/flightRoute.js';
+import testRoute from './routes/testRoute.js';
 
 dotenv.config();
 
@@ -14,6 +16,8 @@ app.use(express.json());
 app.use('/api/auth', authRoute);
 app.use('/api/otp', otpRoute);
 app.use('/api/sms', smsRoute);
+app.use('/api/flights', flightRoute);
+app.use('/api', testRoute);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));

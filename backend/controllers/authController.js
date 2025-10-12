@@ -49,6 +49,30 @@ export const register = async (req, res) => {
     res.status(500).json({ message: 'Something went wrong.' });
   }
 };
+export const getMe = async (req, res) => {
+  try {
+    const userId = req.user.id; // req.user is set by your authMiddleware
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        fullName: true,
+        email: true,
+        phone: true,
+        nationalID: true,
+        role: true,
+        phoneVerified: true,
+        nationalIDVerified: true,
+        createdAt: true,
+      },
+    });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.json(user);
+  } catch (err) {
+    console.error('Error fetching user info:', err);
+    res.status(500).json({ message: 'Failed to fetch user info' });
+  }
+};
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;

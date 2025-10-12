@@ -18,27 +18,47 @@ export default function SignInScreen() {
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState(''); 
   const handleSignIn = async () => {
-    try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await response.json();
-      if (response.ok) {
-        console.log('Login successful:', data);
-        setMessage('Login successful!');
-        navigation.navigate('Home');
-      } else {
-        console.error('Login failed:', data.message || data);
-        setMessage(data.message || 'Login failed');
-      }
-    } catch (error) {
-      console.error('Error logging in:', error);
-      setMessage('An error occurred. Please try again.');
-    }
-  };
+  try {
+    const response = await fetch('http://localhost:5000/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await response.json();
 
+    if (response.ok) {
+      console.log('Login successful:', data);
+      setMessage('Login successful!');
+      const token = data.token;
+      const userRes = await fetch('http://localhost:5000/api/auth/me', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const userData = await userRes.json();
+
+      if (userData.role === 'carrier') {
+        navigation.navigate('CarrierDashboard', { token, user: userData });
+      } else if (userData.role === 'sender') {
+        navigation.navigate('SenderDashboard', { token, user: userData });
+      } else if (userData.role === 'receiver') {
+        navigation.navigate('ReceiverDashboard', { token, user: userData });
+      } else {
+        Alert.alert('Error', 'Unknown role. Cannot navigate.');
+      }
+
+    } else {
+      console.error('Login failed:', data.message || data);
+      setMessage(data.message || 'Login failed');
+    }
+  } catch (error) {
+    console.error('Error logging in:', error);
+    setMessage('An error occurred. Please try again.');
+  }
+};
   return (
     <LinearGradient colors={['#0A122D', '#0A122D']} style={styles.container}>
       <StatusBar barStyle="light-content" />
