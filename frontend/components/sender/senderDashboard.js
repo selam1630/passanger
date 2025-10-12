@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -18,9 +18,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import Slider from '@react-native-community/slider';
 const COLORS = {
-  BACKGROUND_LIGHT: '#F7F8FC', 
-  BACKGROUND_DARK: '#2D4B46', 
-  ACCENT_GOLD: '#FFB733', 
+  BACKGROUND_LIGHT: '#F7F8FC',
+  BACKGROUND_DARK: '#2D4B46',
+  ACCENT_GOLD: '#FFB733',
   TEXT_DARK: '#333333',
   TEXT_LIGHT: '#FFFFFF',
   CARD_BG: '#FFFFFF',
@@ -43,136 +43,24 @@ const SidebarLink = ({ text, isActive, onPress }) => (
     </Text>
   </TouchableOpacity>
 );
-export default function SenderDashboard({ route }) {
-  const navigation = useNavigation();
-  const [token] = useState(route.params?.token || 'mock_sender_token');
-  const [activeMenu, setActiveMenu] = useState('SHIPMENTS');
-  const [flights, setFlights] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [selectedFlight, setSelectedFlight] = useState(null);
-  const [itemWeight, setItemWeight] = useState(5);
-  const [acceptorName, setAcceptorName] = useState('');
-  const [acceptorPhone, setAcceptorPhone] = useState('');
-  const [acceptorNationalID, setAcceptorNationalID] = useState('');
-  const [itemDescription, setItemDescription] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  useEffect(() => {
-    fetchFlights();
-  }, [token]);
-  const fetchFlights = async () => {
-    try {
-      const res = await fetch('http://localhost:5000/api/sender/flights', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setFlights(data);
-      } else {
-        console.error('Error fetching flights:', data.message);
-      }
-    } catch (err) {
-      console.error('Network Error fetching flights:', err);
-    }
-  };
-
-  const handleCreateShipment = async () => {
-    if (!selectedFlight) return Alert.alert('Error', 'Please select a flight first.');
-    if (!acceptorName || !acceptorPhone || !acceptorNationalID) {
-      return Alert.alert('Missing Details', 'Recipient name, phone, and ID are required.');
-    }
-    if (itemWeight <= 0 || itemWeight > selectedFlight.availableKg) {
-        return Alert.alert('Weight Error', 'Invalid weight or exceeds flight capacity.');
-    }
-    setIsSubmitting(true);
-    try {
-      const res = await fetch('http://localhost:5000/api/sender/shipments', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          flightId: selectedFlight.id,
-          itemWeight: parseFloat(itemWeight),
-          acceptorName,
-          acceptorPhone,
-          acceptorNationalID,
-          itemDescription,
-        }),
-      });
-      
-      const data = await res.json();
-      if (res.ok) {
-        Alert.alert('Success', 'Shipment request created! Waiting for Carrier acceptance.');
-        setIsModalVisible(false);
-        resetForm();
-        fetchFlights();
-      } else {
-        Alert.alert('Error', data.message || 'Failed to create shipment request.');
-      }
-    } catch (err) {
-      Alert.alert('Error', 'Something went wrong. Check your connection.');
-      console.error('Shipment creation error:', err);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const resetForm = () => {
-    setSelectedFlight(null);
-    setItemWeight(5);
-    setAcceptorName('');
-    setAcceptorPhone('');
-    setAcceptorNationalID('');
-    setItemDescription('');
-  };
-
-  const openShipmentModal = (flight) => {
-    setSelectedFlight(flight);
-    setItemWeight(Math.min(5, flight.availableKg)); 
-    setIsModalVisible(true);
-  };
-  const filteredFlights = flights.filter(f => 
-    f.from.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    f.to.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const FlightCard = ({ item }) => {
-    const isSelected = selectedFlight && selectedFlight.id === item.id;
-    return (
-      <TouchableOpacity
-        style={[styles.flightCard, isSelected && styles.selectedFlightCard]}
-        onPress={() => openShipmentModal(item)}
-      >
-        <View style={styles.flightHeader}>
-          <Text style={styles.flightRoute}>
-            {item.from} → {item.to}
-          </Text>
-          <Text style={styles.flightCarrier}>{item.carrier.fullName}</Text>
-        </View>
-
-        <View style={styles.flightDetails}>
-          <Text style={styles.detailText}>
-            <Text style={styles.detailLabel}>Date:</Text> {new Date(item.departureDate).toLocaleString()}
-          </Text>
-          <Text style={styles.detailText}>
-            <Text style={styles.detailLabel}>Available KG:</Text> 
-            <Text style={styles.availableKg}>{item.availableKg} kg</Text>
-          </Text>
-          <Text style={styles.detailText}>
-            <Text style={styles.detailLabel}>Status:</Text> 
-            <Text style={styles.flightStatusText}>{item.status.toUpperCase()}</Text>
-          </Text>
-        </View>
-        <Text style={styles.selectPrompt}>{isSelected ? 'SELECTED' : 'SELECT FLIGHT'}</Text>
-      </TouchableOpacity>
-    );
-  };
-
-  const ShipmentModal = () => (
+const MemoizedShipmentModal = React.memo(({
+  isModalVisible,
+  setIsModalVisible,
+  selectedFlight,
+  itemWeight,
+  setItemWeight,
+  acceptorName,
+  setAcceptorName,
+  acceptorPhone,
+  setAcceptorPhone,
+  acceptorNationalID,
+  setAcceptorNationalID,
+  itemDescription,
+  setItemDescription,
+  isSubmitting,
+  handleCreateShipment,
+}) => {
+  return (
     <Modal
       animationType="slide"
       transparent={true}
@@ -190,7 +78,6 @@ export default function SenderDashboard({ route }) {
               Flight: **{selectedFlight.from}** to **{selectedFlight.to}** (Max {selectedFlight.availableKg} kg)
             </Text>
           )}
-
           <ScrollView style={{ maxHeight: 400, width: '100%', paddingHorizontal: 10 }}>
             <Text style={styles.label}>Item Weight (Kg): **{itemWeight} kg**</Text>
             <Slider
@@ -227,7 +114,7 @@ export default function SenderDashboard({ route }) {
               value={acceptorNationalID}
               onChangeText={setAcceptorNationalID}
             />
-             <TextInput
+            <TextInput
               style={[styles.input, { height: 80 }]}
               placeholder="Item Description (Optional)"
               placeholderTextColor={COLORS.SECONDARY_TEXT}
@@ -236,7 +123,7 @@ export default function SenderDashboard({ route }) {
               multiline={true}
             />
           </ScrollView>
-          
+
           <View style={styles.modalActions}>
             <TouchableOpacity
               style={styles.cancelBtn}
@@ -259,11 +146,134 @@ export default function SenderDashboard({ route }) {
       </KeyboardAvoidingView>
     </Modal>
   );
+});
+export default function SenderDashboard({ route }) {
+  const navigation = useNavigation();
+  const [token] = useState(route.params?.token || 'mock_sender_token');
+  const [activeMenu, setActiveMenu] = useState('SHIPMENTS');
+  const [flights, setFlights] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [selectedFlight, setSelectedFlight] = useState(null);
+  const [itemWeight, setItemWeight] = useState(5);
+  const [acceptorName, setAcceptorName] = useState('');
+  const [acceptorPhone, setAcceptorPhone] = useState('');
+  const [acceptorNationalID, setAcceptorNationalID] = useState('');
+  const [itemDescription, setItemDescription] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const fetchFlights = useCallback(async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/sender/flights', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setFlights(data);
+      } else {
+        console.error('Error fetching flights:', data.message);
+      }
+    } catch (err) {
+      console.error('Network Error fetching flights:', err);
+    }
+  }, [token]);
+  useEffect(() => {
+    fetchFlights();
+  }, [fetchFlights]); 
+  const resetForm = () => {
+    setSelectedFlight(null);
+    setItemWeight(5);
+    setAcceptorName('');
+    setAcceptorPhone('');
+    setAcceptorNationalID('');
+    setItemDescription('');
+  };
+  const handleCreateShipment = useCallback(async () => {
+    if (!selectedFlight) return Alert.alert('Error', 'Please select a flight first.');
+    if (!acceptorName || !acceptorPhone || !acceptorNationalID) {
+      return Alert.alert('Missing Details', 'Recipient name, phone, and ID are required.');
+    }
+    if (itemWeight <= 0 || itemWeight > selectedFlight.availableKg) {
+      return Alert.alert('Weight Error', 'Invalid weight or exceeds flight capacity.');
+    }
+    setIsSubmitting(true);
+    try {
+      const res = await fetch('http://localhost:5000/api/sender/shipments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          flightId: selectedFlight.id,
+          itemWeight: parseFloat(itemWeight),
+          acceptorName,
+          acceptorPhone,
+          acceptorNationalID,
+          itemDescription,
+        }),
+      });
 
+      const data = await res.json();
+      if (res.ok) {
+        Alert.alert('Success', 'Shipment request created! Waiting for Carrier acceptance.');
+        setIsModalVisible(false);
+        resetForm();
+        fetchFlights();
+      } else {
+        Alert.alert('Error', data.message || 'Failed to create shipment request.');
+      }
+    } catch (err) {
+      Alert.alert('Error', 'Something went wrong. Check your connection.');
+      console.error('Shipment creation error:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [selectedFlight, itemWeight, acceptorName, acceptorPhone, acceptorNationalID, itemDescription, token, fetchFlights]);
+  const openShipmentModal = (flight) => {
+    setSelectedFlight(flight);
+    setItemWeight(Math.min(5, flight.availableKg)); 
+    setIsModalVisible(true);
+  };
+  const filteredFlights = flights.filter(f =>
+    f.from.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    f.to.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  const FlightCard = ({ item }) => {
+    const isSelected = selectedFlight && selectedFlight.id === item.id;
+    return (
+      <TouchableOpacity
+        style={[styles.flightCard, isSelected && styles.selectedFlightCard]}
+        onPress={() => openShipmentModal(item)}
+      >
+        <View style={styles.flightHeader}>
+          <Text style={styles.flightRoute}>
+            {item.from} → {item.to}
+          </Text>
+          <Text style={styles.flightCarrier}>{item.carrier.fullName}</Text>
+        </View>
+
+        <View style={styles.flightDetails}>
+          <Text style={styles.detailText}>
+            <Text style={styles.detailLabel}>Date:</Text> {new Date(item.departureDate).toLocaleString()}
+          </Text>
+          <Text style={styles.detailText}>
+            <Text style={styles.detailLabel}>Available KG:</Text>
+            <Text style={styles.availableKg}>{item.availableKg} kg</Text>
+          </Text>
+          <Text style={styles.detailText}>
+            <Text style={styles.detailLabel}>Status:</Text>
+            <Text style={styles.flightStatusText}>{item.status.toUpperCase()}</Text>
+          </Text>
+        </View>
+        <Text style={styles.selectPrompt}>{isSelected ? 'SELECTED' : 'SELECT FLIGHT'}</Text>
+      </TouchableOpacity>
+    );
+  };
   return (
     <LinearGradient colors={[COLORS.BACKGROUND_LIGHT, COLORS.BACKGROUND_LIGHT]} style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      
       <View style={styles.mainWrapper}>
         <View style={styles.sidebar}>
           <View style={styles.profileContainer}>
@@ -281,17 +291,17 @@ export default function SenderDashboard({ route }) {
         </View>
         <View style={styles.content}>
           <View style={styles.topBar}>
-             <Text style={styles.pageTitle}>Browse Available Flights</Text>
-             <TextInput
-                style={styles.searchInput}
-                placeholder="Search by From or To location..."
-                placeholderTextColor={COLORS.SECONDARY_TEXT}
-                value={searchTerm}
-                onChangeText={setSearchTerm}
-             />
-             <TouchableOpacity onPress={fetchFlights} style={styles.refreshBtn}>
-                <Text style={styles.refreshText}>Refresh</Text>
-             </TouchableOpacity>
+            <Text style={styles.pageTitle}>Browse Available Flights</Text>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search by From or To location..."
+              placeholderTextColor={COLORS.SECONDARY_TEXT}
+              value={searchTerm}
+              onChangeText={setSearchTerm}
+            />
+            <TouchableOpacity onPress={fetchFlights} style={styles.refreshBtn}>
+              <Text style={styles.refreshText}>Refresh</Text>
+            </TouchableOpacity>
           </View>
 
           {filteredFlights.length === 0 ? (
@@ -300,7 +310,7 @@ export default function SenderDashboard({ route }) {
                 {searchTerm ? `No flights found matching "${searchTerm}".` : 'No flights are currently available.'}
               </Text>
               <TouchableOpacity onPress={fetchFlights} style={styles.addBtn}>
-                 <Text style={styles.addText}>Try Refreshing</Text>
+                <Text style={styles.addText}>Try Refreshing</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -316,15 +326,31 @@ export default function SenderDashboard({ route }) {
           )}
         </View>
       </View>
-      <ShipmentModal />
+      <MemoizedShipmentModal
+        isModalVisible={isModalVisible}
+        setIsModalVisible={setIsModalVisible}
+        selectedFlight={selectedFlight}
+        itemWeight={itemWeight}
+        setItemWeight={setItemWeight}
+        acceptorName={acceptorName}
+        setAcceptorName={setAcceptorName}
+        acceptorPhone={acceptorPhone}
+        setAcceptorPhone={setAcceptorPhone}
+        acceptorNationalID={acceptorNationalID}
+        setAcceptorNationalID={setAcceptorNationalID}
+        itemDescription={itemDescription}
+        setItemDescription={setItemDescription}
+        isSubmitting={isSubmitting}
+        handleCreateShipment={handleCreateShipment}
+      />
     </LinearGradient>
   );
 }
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.BACKGROUND_LIGHT },
-  mainWrapper: { 
-    flexDirection: Platform.OS === 'web' ? 'row' : 'column', 
-    flex: 1 
+  mainWrapper: {
+    flexDirection: Platform.OS === 'web' ? 'row' : 'column',
+    flex: 1
   },
   sidebar: {
     width: Platform.OS === 'web' ? 180 : '100%',
