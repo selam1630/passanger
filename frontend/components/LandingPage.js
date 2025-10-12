@@ -3,18 +3,25 @@ import { StyleSheet, View, Text, TouchableOpacity, Image, ScrollView, StatusBar,
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 
+const COLORS = {
+  BACKGROUND_LIGHT: '#F7F8FC',
+  BACKGROUND_DARK: '#2D4B46',
+  ACCENT_GOLD: '#FFB733',
+  TEXT_DARK: '#333333',
+  TEXT_LIGHT: '#FFFFFF',
+  CARD_BG: '#FFFFFF',
+};
+const placeholderImageUrl = "https://placehold.co/800x600/2D4B46/F7F8FC?text=Global+Logistics";
 export default function LandingPage() {
   const navigation = useNavigation();
-
   return (
-    <LinearGradient colors={['#0A122D', '#0A122D']} style={styles.container}>
+    <LinearGradient colors={[COLORS.BACKGROUND_LIGHT, COLORS.BACKGROUND_LIGHT]} style={styles.container}>
       <ScrollView
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
       >
-        <StatusBar barStyle="light-content" />
+        <StatusBar barStyle="dark-content" />
 
-        {/* Header */}
         <View style={styles.header}>
           <Text style={styles.logo}>FlyBridge</Text>
           <View style={styles.nav}>
@@ -31,7 +38,6 @@ export default function LandingPage() {
           </View>
         </View>
 
-        {/* Hero Section */}
         <View style={styles.heroSection}>
           <View style={styles.heroLeft}>
             <Text style={styles.heroTitle}>The Hardest Working Team in Transport</Text>
@@ -45,7 +51,7 @@ export default function LandingPage() {
 
           <View style={styles.heroRight}>
             <Image
-              source={require('../assets/favicon.png')}
+              source={{ uri: placeholderImageUrl }}
               style={styles.heroImage}
               resizeMode="cover"
             />
@@ -55,10 +61,10 @@ export default function LandingPage() {
     </LinearGradient>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: COLORS.BACKGROUND_LIGHT,
   },
   scroll: {
     flexGrow: 1,
@@ -73,7 +79,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   logo: {
-    color: '#FFA500',
+    color: COLORS.ACCENT_GOLD,
     fontSize: 28,
     fontWeight: 'bold',
   },
@@ -84,13 +90,13 @@ const styles = StyleSheet.create({
     marginTop: Platform.OS === 'web' ? 0 : 10,
   },
   navItem: {
-    color: 'white',
+    color: COLORS.TEXT_DARK, 
     marginHorizontal: 10,
     fontSize: 16,
     marginVertical: 5,
   },
   getStartedBtn: {
-    backgroundColor: '#FFA500',
+    backgroundColor: COLORS.ACCENT_GOLD,
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 25,
@@ -102,7 +108,7 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   getStartedText: {
-    color: '#0A122D',
+    color: COLORS.BACKGROUND_DARK,
     fontWeight: 'bold',
     fontSize: 16,
   },
@@ -110,9 +116,15 @@ const styles = StyleSheet.create({
     flexDirection: Platform.OS === 'web' ? 'row' : 'column',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#0A122D',
+    backgroundColor: COLORS.BACKGROUND_DARK,
     borderRadius: 20,
-    padding: 20,
+    padding: 40, 
+    minHeight: 500,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 15,
+    elevation: 10,
   },
   heroLeft: {
     flex: 1,
@@ -120,31 +132,32 @@ const styles = StyleSheet.create({
     marginBottom: Platform.OS === 'web' ? 0 : 20,
   },
   heroTitle: {
-    color: 'white',
-    fontSize: 32,
+    color: COLORS.TEXT_LIGHT,
+    fontSize: 38,
     fontWeight: 'bold',
     marginBottom: 15,
   },
   heroSubtitle: {
-    color: '#ccc',
+    color: 'rgba(255, 255, 255, 0.8)',
     fontSize: 16,
     marginBottom: 20,
+    lineHeight: 24,
   },
   quoteBtn: {
-    backgroundColor: '#FFA500',
-    paddingVertical: 12,
-    paddingHorizontal: 25,
-    borderRadius: 25,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
+    backgroundColor: COLORS.ACCENT_GOLD,
+    paddingVertical: 15,
+    paddingHorizontal: 30,
+    borderRadius: 30,
+    shadowColor: COLORS.ACCENT_GOLD,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 6,
+    elevation: 6,
   },
   quoteText: {
-    color: '#0A122D',
+    color: COLORS.BACKGROUND_DARK,
     fontWeight: 'bold',
-    fontSize: 16,
+    fontSize: 17,
     textAlign: 'center',
   },
   heroRight: {
@@ -155,6 +168,11 @@ const styles = StyleSheet.create({
   heroImage: {
     width: Platform.OS === 'web' ? 400 : '100%',
     height: 300,
-    borderRadius: 20,
+    borderRadius: 15, 
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 8,
   },
 });

@@ -9,59 +9,73 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
+const COLORS = {
+  BACKGROUND_LIGHT: '#F7F8FC',      
+  BACKGROUND_DARK: '#2D4B46',
+  ACCENT_GOLD: '#FFB733',
+  TEXT_DARK: '#333333',
+  TEXT_LIGHT: '#FFFFFF',
+  INPUT_BG: 'rgba(45, 75, 70, 0.05)',
+  CARD_BG: '#FFFFFF',              
+  STATUS_GREEN: '#4CAF50',
+};
+
 export default function SignInScreen() {
   const navigation = useNavigation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState(''); 
+  
   const handleSignIn = async () => {
-  try {
-    const response = await fetch('http://localhost:5000/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
-    const data = await response.json();
-
-    if (response.ok) {
-      console.log('Login successful:', data);
-      setMessage('Login successful!');
-      const token = data.token;
-      const userRes = await fetch('http://localhost:5000/api/auth/me', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
       });
+      const data = await response.json();
 
-      const userData = await userRes.json();
+      if (response.ok) {
+        console.log('Login successful:', data);
+        setMessage('Login successful!');
+        const token = data.token;
+        const userRes = await fetch('http://localhost:5000/api/auth/me', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-      if (userData.role === 'carrier') {
-        navigation.navigate('CarrierDashboard', { token, user: userData });
-      } else if (userData.role === 'sender') {
-        navigation.navigate('SenderDashboard', { token, user: userData });
-      } else if (userData.role === 'receiver') {
-        navigation.navigate('ReceiverDashboard', { token, user: userData });
+        const userData = await userRes.json();
+
+        if (userData.role === 'carrier') {
+          navigation.navigate('CarrierDashboard', { token, user: userData });
+        } else if (userData.role === 'sender') {
+          navigation.navigate('SenderDashboard', { token, user: userData });
+        } else if (userData.role === 'receiver') {
+          navigation.navigate('ReceiverDashboard', { token, user: userData });
+        } else {
+          Alert.alert('Error', 'Unknown role. Cannot navigate.');
+        }
+
       } else {
-        Alert.alert('Error', 'Unknown role. Cannot navigate.');
+        console.error('Login failed:', data.message || data);
+        setMessage(data.message || 'Login failed');
       }
-
-    } else {
-      console.error('Login failed:', data.message || data);
-      setMessage(data.message || 'Login failed');
+    } catch (error) {
+      console.error('Error logging in:', error);
+      setMessage('An error occurred. Please try again.');
     }
-  } catch (error) {
-    console.error('Error logging in:', error);
-    setMessage('An error occurred. Please try again.');
-  }
-};
+  };
+  
   return (
-    <LinearGradient colors={['#0A122D', '#0A122D']} style={styles.container}>
-      <StatusBar barStyle="light-content" />
+    <LinearGradient colors={[COLORS.BACKGROUND_LIGHT, COLORS.BACKGROUND_LIGHT]} style={styles.container}>
+      <StatusBar barStyle="dark-content" />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
@@ -71,31 +85,25 @@ export default function SignInScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.card}>
-            {/* Logo */}
-
-            {/* Titles */}
+            <Text style={styles.logo}>FlyBridge</Text>
             <Text style={styles.title}>Welcome Back</Text>
             <Text style={styles.subtitle}>Sign in to continue your journey</Text>
-
-            {/* Feedback Message */}
             {message ? (
               <Text
                 style={{
-                  color: message.includes('successful') ? 'green' : 'red',
+                  color: message.includes('successful') ? COLORS.STATUS_GREEN : 'red',
                   textAlign: 'center',
                   marginBottom: 15,
-                  fontSize: 16,
+                  fontSize: 14,
                 }}
               >
                 {message}
               </Text>
             ) : null}
-
-            {/* Inputs */}
             <TextInput
               style={styles.input}
               placeholder="Email"
-              placeholderTextColor="#ccc"
+              placeholderTextColor="#999" 
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -104,18 +112,14 @@ export default function SignInScreen() {
             <TextInput
               style={styles.input}
               placeholder="Password"
-              placeholderTextColor="#ccc"
+              placeholderTextColor="#999"
               secureTextEntry
               value={password}
               onChangeText={setPassword}
             />
-
-            {/* Sign In Button */}
             <TouchableOpacity style={styles.signInBtn} onPress={handleSignIn}>
               <Text style={styles.signInText}>Sign In</Text>
             </TouchableOpacity>
-
-            {/* Footer */}
             <View style={styles.footer}>
               <Text style={styles.footerText}>Don’t have an account?</Text>
               <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
@@ -130,7 +134,7 @@ export default function SignInScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, backgroundColor: COLORS.BACKGROUND_LIGHT },
   scroll: {
     flexGrow: 1,
     justifyContent: 'center',
@@ -138,59 +142,61 @@ const styles = StyleSheet.create({
     paddingVertical: 60,
   },
   card: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 20,
+    backgroundColor: COLORS.CARD_BG,
+    borderRadius: 15,
     padding: 25,
     width: '90%',
     maxWidth: 450,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 5,
   },
   logo: {
-    color: '#FFA500',
+    color: COLORS.ACCENT_GOLD,
     fontSize: 30,
     fontWeight: 'bold',
     alignSelf: 'center',
     marginBottom: 20,
   },
   title: {
-    color: 'white',
+    color: COLORS.TEXT_DARK,
     fontSize: 26,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 10,
+    marginBottom: 5,
   },
   subtitle: {
-    color: '#ccc',
+    color: '#888',
     textAlign: 'center',
     marginBottom: 30,
-    fontSize: 16,
+    fontSize: 14,
   },
   input: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: COLORS.INPUT_BG,
     borderRadius: 10,
     padding: 15,
-    color: 'white',
+    color: COLORS.TEXT_DARK, 
     marginBottom: 15,
     width: '100%',
     fontSize: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(45, 75, 70, 0.1)',
   },
   signInBtn: {
-    backgroundColor: '#FFA500',
+    backgroundColor: COLORS.ACCENT_GOLD, 
     paddingVertical: 15,
     borderRadius: 10,
     marginTop: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
+    shadowColor: COLORS.ACCENT_GOLD,
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
-    shadowRadius: 4,
+    shadowRadius: 5,
     elevation: 5,
   },
   signInText: {
-    color: '#0A122D',
+    color: COLORS.BACKGROUND_DARK,
     fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
@@ -200,6 +206,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 25,
   },
-  footerText: { color: 'white', fontSize: 16 },
-  link: { color: '#FFA500', fontWeight: 'bold', fontSize: 16 },
+  footerText: { color: COLORS.TEXT_DARK, fontSize: 14 },
+  link: { color: COLORS.ACCENT_GOLD, fontWeight: 'bold', fontSize: 14 },
 });
