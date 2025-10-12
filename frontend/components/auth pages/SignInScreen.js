@@ -56,7 +56,7 @@ export default function SignInScreen() {
         if (userData.role === 'carrier') {
           navigation.navigate('CarrierDashboard', { token, user: userData });
         } else if (userData.role === 'sender') {
-          navigation.navigate('SenderDashboard', { token, user: userData });
+          navigation.navigate('senderDashboard', { token, user: userData });
         } else if (userData.role === 'receiver') {
           navigation.navigate('ReceiverDashboard', { token, user: userData });
         } else {
