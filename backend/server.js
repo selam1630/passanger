@@ -7,6 +7,7 @@ import smsRoute from './routes/smsRoute.js';
 import flightRoute from './routes/flightRoute.js';
 import testRoute from './routes/testRoute.js';
 import senderRoute from './routes/senderRoute.js';
+import receiverRoute from "./routes/receiverRoute.js";
 
 dotenv.config();
 
@@ -19,6 +20,7 @@ app.use('/api/otp', otpRoute);
 app.use('/api/sms', smsRoute);
 app.use('/api/flights', flightRoute);
 app.use('/api/sender', senderRoute);
+app.use('/api/receiver', receiverRoute);
 
 app.use('/api', testRoute);
 
