@@ -45,11 +45,21 @@ export default function CarrierDashboard({ route }) {
   const [flights, setFlights] = useState([]);
   const [token, setToken] = useState('');
   const [activeMenu, setActiveMenu] = useState('REPORTS'); 
+  const [shipments, setShipments] = useState([]);
 
-  useEffect(() => {
-    if (route.params?.token) setToken(route.params.token);
-    fetchFlights();
-  }, []);
+
+ useEffect(() => {
+  if (route.params?.token) {
+    setToken(route.params.token);
+  }
+  fetchFlights();
+}, [route.params?.token]);
+
+useEffect(() => {
+  if (token) {
+    fetchShipments();
+  }
+}, [token]);
 
   const fetchFlights = async () => {
     try {
@@ -60,6 +70,25 @@ export default function CarrierDashboard({ route }) {
       console.error('Error fetching flights:', err);
     }
   };
+
+
+  const fetchShipments = async () => {
+  try {
+    const res = await fetch('http://localhost:5000/api/flights/shipments', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    const data = await res.json();
+    if (res.ok) {
+      setShipments(data);
+    } else {
+      console.error("Failed to fetch shipments:", data.message);
+    }
+  } catch (err) {
+    console.error('Error fetching shipments:', err);
+  }
+};
 
   const handleAddFlight = async () => {
     if (!from || !to || !departureDate || !availableKg) {
@@ -235,6 +264,33 @@ export default function CarrierDashboard({ route }) {
             scrollEnabled={false} 
             style={{ width: '100%', marginTop: cardSpacing }}
           />
+          <Text style={styles.subtitle}>Shipment Requests</Text>
+{shipments.length === 0 ? (
+  <Text style={{ color: '#888', marginTop: 10 }}>No shipment requests yet.</Text>
+) : (
+  <FlatList
+    data={shipments}
+    keyExtractor={(item) => item.id}
+    renderItem={({ item }) => (
+      <View style={styles.shipmentCard}>
+        <Text style={styles.shipmentTitle}>
+          {item.sender.fullName} → {item.flight.from} to {item.flight.to}
+        </Text>
+        <Text style={styles.shipmentDetail}>
+          Weight: {item.itemWeight} Kg | Status: {item.acceptorVerified ? 'Verified' : 'Pending'}
+        </Text>
+        <Text style={styles.shipmentDetail}>
+          Receiver: {item.acceptorName} ({item.acceptorPhone})
+        </Text>
+        <Text style={styles.shipmentDetail}>
+          Departure: {new Date(item.flight.departureDate).toLocaleString()}
+        </Text>
+      </View>
+    )}
+    scrollEnabled={false}
+    style={{ width: '100%', marginTop: 10 }}
+  />
+)}
         </ScrollView>
       </View>
     </LinearGradient>
@@ -505,5 +561,31 @@ const styles = StyleSheet.create({
   flightTextStatus: {
     fontSize: 12,
     fontWeight: 'bold',
-  }
+  },
+  shipmentCard: {
+  backgroundColor: '#fff',
+  borderRadius: 10,
+  padding: 15,
+  marginBottom: 10,
+  width: '100%',
+  borderLeftWidth: 5,
+  borderLeftColor: '#FFB733',
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 1 },
+  shadowOpacity: 0.05,
+  shadowRadius: 3,
+  elevation: 2,
+},
+shipmentTitle: {
+  color: '#2D4B46',
+  fontSize: 14,
+  fontWeight: 'bold',
+  marginBottom: 5,
+},
+shipmentDetail: {
+  color: '#888',
+  fontSize: 12,
+  marginBottom: 2,
+},
+
 });

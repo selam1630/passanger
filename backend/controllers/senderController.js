@@ -1,4 +1,5 @@
 import prisma from "../config/db.js";
+import { sendSms } from './smsController.js'; 
 export const getAvailableFlights = async (req, res) => {
   try {
     const flights = await prisma.flight.findMany({
@@ -31,13 +32,19 @@ export const createShipment = async (req, res) => {
   try {
     const { flightId, itemWeight, acceptorName, acceptorPhone, acceptorNationalID } = req.body;
     const senderId = req.user.id; 
+
     if (!flightId || !itemWeight || !acceptorName || !acceptorPhone || !acceptorNationalID) {
       return res.status(400).json({ message: "All fields are required" });
     }
-    const flight = await prisma.flight.findUnique({ where: { id: flightId } });
+    const flight = await prisma.flight.findUnique({
+      where: { id: flightId },
+      include: { carrier: { select: { fullName: true, phone: true } } }
+    });
+
     if (!flight) {
       return res.status(404).json({ message: "Flight not found" });
     }
+
     if (itemWeight > flight.availableKg) {
       return res.status(400).json({ message: "Item weight exceeds available flight capacity" });
     }
@@ -57,10 +64,20 @@ export const createShipment = async (req, res) => {
         acceptorVerified: false,
       },
     });
+    const trackingCode = `SHIP-${shipment.id.slice(-6).toUpperCase()}`;
+    await prisma.shipment.update({
+      where: { id: shipment.id },
+      data: { trackingCode },
+    });
+    const message = `📦 Hello ${acceptorName}, you have a new item shipment from ${req.user.fullName}. 
+Track your package using code: ${trackingCode}. 
+Flight from ${flight.from} to ${flight.to} departs on ${new Date(flight.departureDate).toLocaleDateString()}.`;
+    await sendSms(acceptorPhone, message);
 
-    res.status(201).json({ message: "Shipment request created successfully", shipment });
+    res.status(201).json({ message: "Shipment request created and SMS sent", shipment });
   } catch (error) {
     console.error("Error creating shipment:", error);
     res.status(500).json({ message: "Failed to create shipment" });
   }
 };
+
