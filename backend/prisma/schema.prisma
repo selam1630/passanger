@@ -22,7 +22,7 @@ model User {
    flights       Flight[]     @relation("UserFlights")      
   sentShipments Shipment[]   @relation("SenderShipments")
   carriedShipments Shipment[] @relation("CarrierShipments") 
-
+ balance              Float    @default(0) 
 }
 model Flight {
   id            String   @id @default(auto()) @map("_id") @db.ObjectId
@@ -57,7 +57,8 @@ model Shipment {
   sender   User   @relation("SenderShipments", fields: [senderId], references: [id])
   carrier  User   @relation("CarrierShipments", fields: [carrierId], references: [id])
   flight   Flight @relation(fields: [flightId], references: [id])
-  trackingCode        String?
+  trackingCode        String  @unique
+  status String @default("PENDING")
 }
 model Payment {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
@@ -70,3 +71,12 @@ model Payment {
   platformFee Float?
 }
 
+model SupportMessage {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId       
+  agentId   String?  @db.ObjectId       
+  message   String
+  sentBy    String   
+  status    String   @default("unread") 
+  createdAt DateTime @default(now())
+}

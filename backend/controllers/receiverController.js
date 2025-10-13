@@ -26,3 +26,45 @@ export const trackShipment = async (req, res) => {
     res.status(500).json({ message: "Failed to track shipment" });
   }
 };
+export const confirmDelivery = async (req, res) => {
+  try {
+    const { trackingCode } = req.params;
+    const shipment = await prisma.shipment.findUnique({
+      where: { trackingCode },
+      include: { carrier: true },
+    });
+
+    if (!shipment) return res.status(404).json({ message: "Shipment not found" });
+
+    if (shipment.status === "DELIVERED") {
+      return res.status(400).json({ message: "Shipment already confirmed" });
+    }
+    const updatedShipment = await prisma.shipment.update({
+      where: { id: shipment.id },
+      data: { status: "DELIVERED" },
+    });
+const platformFee = 0.1;
+const shipmentFee = shipment.fee ?? 0;
+const amountToRelease = shipmentFee * (1 - platformFee);
+
+if (!isNaN(amountToRelease) && amountToRelease > 0) {
+  await prisma.user.update({
+    where: { id: shipment.carrierId },
+    data: { balance: { increment: amountToRelease } },
+  });
+}
+    await prisma.user.update({
+      where: { id: shipment.carrierId },
+      data: { balance: { increment: amountToRelease } },
+    });
+
+    res.status(200).json({
+      message: "Delivery confirmed. Payment released to carrier.",
+      shipment: updatedShipment,
+      amountReleased: amountToRelease,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to confirm delivery" });
+  }
+};

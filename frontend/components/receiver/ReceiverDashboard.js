@@ -10,9 +10,11 @@ import {
   Alert,
   Platform,
   ActivityIndicator,
+  Modal, 
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
+
 const COLORS = {
   BACKGROUND_LIGHT: '#F7F8FC',
   BACKGROUND_DARK: '#2D4B46',
@@ -25,7 +27,9 @@ const COLORS = {
   WARNING: '#FFC107',
   INFO: '#17A2B8',
   DANGER: '#DC3545',
+  INPUT_BG: 'rgba(45, 75, 70, 0.05)', 
 };
+
 const SidebarLink = ({ text, isActive, onPress }) => (
   <TouchableOpacity
     style={[
@@ -39,6 +43,7 @@ const SidebarLink = ({ text, isActive, onPress }) => (
     </Text>
   </TouchableOpacity>
 );
+
 const getStatusStyle = (status) => {
   switch (status?.toUpperCase()) {
     case 'PENDING':
@@ -55,13 +60,54 @@ const getStatusStyle = (status) => {
       return { color: COLORS.SECONDARY_TEXT };
   }
 };
+const ConfirmDeliveryModal = ({ isVisible, onClose, onConfirm, shipment }) => {
+  return (
+    <Modal
+      animationType="fade"
+      transparent={true}
+      visible={isVisible}
+      onRequestClose={onClose}
+    >
+      <View style={modalStyles.centeredView}>
+        <View style={modalStyles.modalView}>
+          <Text style={modalStyles.modalTitle}>Confirm Delivery</Text>
+          <Text style={modalStyles.modalText}>
+            Are you sure you want to confirm receipt for shipment:
+          </Text>
+          <Text style={modalStyles.trackingCodeText}>
+            {shipment?.trackingCode || 'N/A'}?
+          </Text>
+          <Text style={modalStyles.modalText}>
+            This action will release payment to the sender.
+          </Text>
 
+          <View style={modalStyles.buttonContainer}>
+            <TouchableOpacity
+              style={[modalStyles.button, modalStyles.cancelButton]}
+              onPress={onClose}
+            >
+              <Text style={modalStyles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[modalStyles.button, modalStyles.confirmButton]}
+              onPress={() => onConfirm(shipment)}
+            >
+              <Text style={modalStyles.confirmButtonText}>Confirm</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+};
 export default function ReceiverDashboard() {
   const navigation = useNavigation();
-  const [activeMenu, setActiveMenu] = useState('TRACK'); 
+  const [activeMenu, setActiveMenu] = useState('TRACK');
   const [trackingCode, setTrackingCode] = useState('');
   const [shipmentDetails, setShipmentDetails] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isConfirmModalVisible, setIsConfirmModalVisible] = useState(false);
+  const [shipmentToConfirm, setShipmentToConfirm] = useState(null);
 
   const handleTrackShipment = useCallback(async () => {
     if (!trackingCode.trim()) {
@@ -85,9 +131,65 @@ export default function ReceiverDashboard() {
       setIsLoading(false);
     }
   }, [trackingCode]);
+  const showConfirmationModal = (shipment) => {
+    setShipmentToConfirm(shipment);
+    setIsConfirmModalVisible(true);
+  };
+
+  const handleConfirmDelivery = async (shipment) => {
+    setIsConfirmModalVisible(false); 
+    
+    if (!shipment) {
+      Alert.alert("Error", "No shipment selected for confirmation.");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const API_BASE = "http://localhost:5000";
+      const trackingCode = shipment?.trackingCode;
+
+      console.log("Sending confirmation request for:", trackingCode);
+
+      const res = await fetch(`${API_BASE}/api/receiver/confirm/${trackingCode}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      const data = await res.json();
+      console.log("Confirm delivery response:", data);
+
+      if (res.ok) {
+        Alert.alert(`Success`, `✅ Payment released: $${data.amountReleased}`);
+        setShipmentDetails(prevDetails => ({
+            ...prevDetails,
+            ...data.shipment
+        }));
+      } else {
+        Alert.alert(`Error`, `❌ ${data.message || "Something went wrong"}`);
+      }
+    } catch (err) {
+      console.error("Confirm delivery error:", err);
+      Alert.alert("Network Error", "⚠️ Network or server error");
+    } finally {
+      setIsLoading(false);
+      setShipmentToConfirm(null); 
+    }
+  };
+
   const TrackingResultCard = ({ shipment }) => {
-    const flightDate = new Date(shipment.flight.departureDate).toLocaleString();
+    if (!shipment) return null;
+
+    const flight = shipment?.flight || {};
+    const sender = shipment?.sender || {};
+    const carrier = shipment?.carrier || {};
+
+    const flightDate = flight?.departureDate
+      ? new Date(flight.departureDate).toLocaleString()
+      : "Not Available";
+
     const statusStyle = getStatusStyle(shipment.status);
+    const isConfirmationDisabled = isLoading || shipment.status?.toUpperCase() === 'DELIVERED' || shipment.status?.toUpperCase() === 'CANCELLED';
 
     return (
       <View style={styles.resultCard}>
@@ -95,55 +197,92 @@ export default function ReceiverDashboard() {
 
         <View style={styles.detailRow}>
           <Text style={styles.detailLabel}>Tracking Code:</Text>
-          <Text style={styles.detailValue}>{shipment.trackingCode}</Text>
+          <Text style={styles.detailValue}>{shipment.trackingCode || "N/A"}</Text>
         </View>
 
         <View style={styles.detailRow}>
           <Text style={styles.detailLabel}>Item Weight:</Text>
-          <Text style={styles.detailValue}>{shipment.itemWeight} kg</Text>
+          <Text style={styles.detailValue}>
+            {shipment.itemWeight ? `${shipment.itemWeight} kg` : "N/A"}
+          </Text>
         </View>
-        
+
         <View style={styles.detailRow}>
           <Text style={styles.detailLabel}>Shipment Status:</Text>
-          <Text style={[styles.detailValue, { fontWeight: 'bold' }, statusStyle]}>
-            {shipment.status?.toUpperCase().replace('_', ' ')}
+          <Text
+            style={[styles.detailValue, { fontWeight: "bold" }, statusStyle]}
+          >
+            {shipment.status?.toUpperCase().replace("_", " ") || "UNKNOWN"}
           </Text>
         </View>
 
         <View style={styles.separator} />
 
         <Text style={styles.cardSubHeader}>Flight Information</Text>
+
         <View style={styles.detailRow}>
           <Text style={styles.detailLabel}>Route:</Text>
-          <Text style={styles.detailValue}>{shipment.flight.from} → {shipment.flight.to}</Text>
+          <Text style={styles.detailValue}>
+            {flight.from || "N/A"} → {flight.to || "N/A"}
+          </Text>
         </View>
+
         <View style={styles.detailRow}>
           <Text style={styles.detailLabel}>Departure:</Text>
           <Text style={styles.detailValue}>{flightDate}</Text>
         </View>
+
         <View style={styles.detailRow}>
           <Text style={styles.detailLabel}>Flight Status:</Text>
-          <Text style={[styles.detailValue, getStatusStyle(shipment.flight.status)]}>
-            {shipment.flight.status?.toUpperCase()}
+          <Text
+            style={[styles.detailValue, getStatusStyle(flight?.status)]}
+          >
+            {flight?.status?.toUpperCase() || "UNKNOWN"}
           </Text>
         </View>
-        
+
         <View style={styles.separator} />
 
         <Text style={styles.cardSubHeader}>Sender & Carrier</Text>
+
         <View style={styles.detailRow}>
           <Text style={styles.detailLabel}>Sender:</Text>
-          <Text style={styles.detailValue}>{shipment.sender.fullName} ({shipment.sender.phone})</Text>
+          <Text style={styles.detailValue}>
+            {sender.fullName
+              ? `${sender.fullName} (${sender.phone})`
+              : "Unknown Sender"}
+          </Text>
         </View>
+
         <View style={styles.detailRow}>
           <Text style={styles.detailLabel}>Carrier:</Text>
-          <Text style={styles.detailValue}>{shipment.carrier.fullName} ({shipment.carrier.phone})</Text>
+          <Text style={styles.detailValue}>
+            {carrier.fullName
+              ? `${carrier.fullName} (${carrier.phone})`
+              : "Unknown Carrier"}
+          </Text>
         </View>
-        
+        <TouchableOpacity
+          onPress={() => showConfirmationModal(shipment)} 
+          style={{
+            backgroundColor: isConfirmationDisabled ? COLORS.SECONDARY_TEXT : COLORS.ACCENT_GOLD,
+            padding: 10,
+            borderRadius: 10,
+            marginTop: 15,
+            alignItems: "center",
+          }}
+          disabled={isConfirmationDisabled}
+        >
+          <Text
+            style={{ color: COLORS.BACKGROUND_DARK, fontWeight: "bold" }}
+          >
+            {shipment.status?.toUpperCase() === 'DELIVERED' ? 'DELIVERY CONFIRMED' : 'Confirm Delivery'}
+          </Text>
+        </TouchableOpacity>
       </View>
     );
   };
-
+  
   return (
     <LinearGradient colors={[COLORS.BACKGROUND_LIGHT, COLORS.BACKGROUND_LIGHT]} style={styles.container}>
       <StatusBar barStyle="dark-content" />
@@ -200,9 +339,87 @@ export default function ReceiverDashboard() {
           
         </ScrollView>
       </View>
+      <ConfirmDeliveryModal 
+        isVisible={isConfirmModalVisible} 
+        onClose={() => setIsConfirmModalVisible(false)}
+        onConfirm={handleConfirmDelivery}
+        shipment={shipmentToConfirm}
+      />
+      {/* ----------------------------- */}
     </LinearGradient>
   );
 }
+const modalStyles = StyleSheet.create({
+  centeredView: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',// Dark overlay
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: COLORS.CARD_BG,
+    borderRadius: 15,
+    padding: 35,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+    width: '80%',
+    maxWidth: 400,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: COLORS.BACKGROUND_DARK,
+    marginBottom: 10,
+  },
+  modalText: {
+    marginBottom: 10,
+    textAlign: 'center',
+    color: COLORS.TEXT_DARK,
+    fontSize: 14,
+  },
+  trackingCodeText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.ACCENT_GOLD,
+    marginBottom: 20,
+    padding: 5,
+    backgroundColor: COLORS.INPUT_BG,
+    borderRadius: 5,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    marginTop: 20,
+    width: '100%',
+    justifyContent: 'space-between',
+  },
+  button: {
+    borderRadius: 10,
+    padding: 12,
+    elevation: 2,
+    flex: 1,
+    marginHorizontal: 5,
+  },
+  cancelButton: {
+    backgroundColor: COLORS.SECONDARY_TEXT,
+  },
+  confirmButton: {
+    backgroundColor: COLORS.ACCENT_GOLD,
+  },
+  cancelButtonText: {
+    color: COLORS.TEXT_LIGHT,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  confirmButtonText: {
+    color: COLORS.BACKGROUND_DARK,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+});
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.BACKGROUND_LIGHT },
   mainWrapper: {
