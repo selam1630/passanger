@@ -17,6 +17,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import Slider from '@react-native-community/slider';
+import * as WebBrowser from 'expo-web-browser';
 const COLORS = {
   BACKGROUND_LIGHT: '#F7F8FC',
   BACKGROUND_DARK: '#2D4B46',
@@ -190,47 +191,84 @@ export default function SenderDashboard({ route }) {
     setItemDescription('');
   };
   const handleCreateShipment = useCallback(async () => {
-    if (!selectedFlight) return Alert.alert('Error', 'Please select a flight first.');
-    if (!acceptorName || !acceptorPhone || !acceptorNationalID) {
-      return Alert.alert('Missing Details', 'Recipient name, phone, and ID are required.');
-    }
-    if (itemWeight <= 0 || itemWeight > selectedFlight.availableKg) {
-      return Alert.alert('Weight Error', 'Invalid weight or exceeds flight capacity.');
-    }
-    setIsSubmitting(true);
-    try {
-      const res = await fetch('http://localhost:5000/api/sender/shipments', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          flightId: selectedFlight.id,
-          itemWeight: parseFloat(itemWeight),
-          acceptorName,
-          acceptorPhone,
-          acceptorNationalID,
-          itemDescription,
-        }),
-      });
+  if (!selectedFlight) return Alert.alert('Error', 'Please select a flight first.');
+  if (!acceptorName || !acceptorPhone || !acceptorNationalID) {
+    return Alert.alert('Missing Details', 'Recipient name, phone, and ID are required.');
+  }
+  if (itemWeight <= 0 || itemWeight > selectedFlight.availableKg) {
+    return Alert.alert('Weight Error', 'Invalid weight or exceeds flight capacity.');
+  }
 
-      const data = await res.json();
-      if (res.ok) {
-        Alert.alert('Success', 'Shipment request created! Waiting for Carrier acceptance.');
-        setIsModalVisible(false);
-        resetForm();
-        fetchFlights();
-      } else {
-        Alert.alert('Error', data.message || 'Failed to create shipment request.');
-      }
-    } catch (err) {
-      Alert.alert('Error', 'Something went wrong. Check your connection.');
-      console.error('Shipment creation error:', err);
-    } finally {
-      setIsSubmitting(false);
+  setIsSubmitting(true);
+
+  try {
+    const shipmentRes = await fetch('http://localhost:5000/api/sender/shipments', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        flightId: selectedFlight.id,
+        itemWeight: parseFloat(itemWeight),
+        acceptorName,
+        acceptorPhone,
+        acceptorNationalID,
+        itemDescription,
+      }),
+    });
+
+    const shipmentData = await shipmentRes.json();
+
+    if (!shipmentRes.ok) {
+      return Alert.alert('Error', shipmentData.message || 'Failed to create shipment.');
     }
-  }, [selectedFlight, itemWeight, acceptorName, acceptorPhone, acceptorNationalID, itemDescription, token, fetchFlights]);
+    const paymentRes = await fetch('http://localhost:5000/api/payment/initialize', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        shipmentId: shipmentData.shipment.id,   
+        amount: 50, 
+        currency: 'ETB',
+        customerName: 'Sender Name',
+        customerEmail: 'sender@email.com',
+      }),
+    });
+
+    const paymentData = await paymentRes.json();
+
+    if (!paymentRes.ok) {
+      return Alert.alert('Error', paymentData.message || 'Payment initialization failed.');
+    }
+    if (paymentData.checkoutUrl) {
+      await WebBrowser.openBrowserAsync(paymentData.checkoutUrl);
+      Alert.alert('Payment Started', 'Please complete payment in the browser.');
+    }
+
+    setIsModalVisible(false);
+    resetForm();
+    fetchFlights();
+
+  } catch (err) {
+    console.error('Shipment creation error:', err);
+    Alert.alert('Error', 'Something went wrong. Check your connection.');
+  } finally {
+    setIsSubmitting(false);
+  }
+}, [
+  selectedFlight,
+  itemWeight,
+  acceptorName,
+  acceptorPhone,
+  acceptorNationalID,
+  itemDescription,
+  token,
+  fetchFlights,
+]);
+
   const openShipmentModal = (flight) => {
     setSelectedFlight(flight);
     setItemWeight(Math.min(5, flight.availableKg)); 
