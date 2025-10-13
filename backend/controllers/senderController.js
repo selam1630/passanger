@@ -81,26 +81,3 @@ Flight from ${flight.from} to ${flight.to} departs on ${new Date(flight.departur
   }
 };
 
-export const getCarrierShipments = async (req, res) => {
-  try {
-    const carrierId = req.user.id;
-
-    const shipments = await prisma.shipment.findMany({
-      where: { carrierId },
-      include: {
-        sender: {
-          select: { fullName: true, phone: true, email: true },
-        },
-        flight: {
-          select: { from: true, to: true, departureDate: true },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    });
-
-    res.status(200).json(shipments);
-  } catch (error) {
-    console.error("Error fetching carrier shipments:", error);
-    res.status(500).json({ message: "Failed to fetch carrier shipments" });
-  }
-};
