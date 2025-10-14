@@ -8,6 +8,7 @@ import VerifyOtpScreen from './components/auth pages/VerifyOtpScreen';
 import CarrierDashboard from './components/carrier/CarrierDashboard';
 import senderDashboard from './components/sender/senderDashboard';
 import RecieverDashboard from './components/receiver/ReceiverDashboard';
+import SupportChat from './components/ChatScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -22,6 +23,7 @@ export default function App() {
         <Stack.Screen name="senderDashboard" component={senderDashboard} />
         <Stack.Screen name="VerifyOtp" component={VerifyOtpScreen} />
         <Stack.Screen name="ReceiverDashboard" component={RecieverDashboard} />
+        <Stack.Screen name="SupportChat" component={SupportChat} />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback,useEffect } from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const COLORS = {
   BACKGROUND_LIGHT: '#F7F8FC',
@@ -108,6 +109,22 @@ export default function ReceiverDashboard() {
   const [isLoading, setIsLoading] = useState(false);
   const [isConfirmModalVisible, setIsConfirmModalVisible] = useState(false);
   const [shipmentToConfirm, setShipmentToConfirm] = useState(null);
+  const [user, setUser] = useState(null);
+  const [isUserLoading, setIsUserLoading] = useState(true);
+
+useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const storedUser = await AsyncStorage.getItem('user');
+        if (storedUser) setUser(JSON.parse(storedUser));
+      } catch (err) {
+        console.log('Error loading user:', err);
+      } finally {
+        setIsUserLoading(false); 
+      }
+    };
+    fetchUser();
+  }, []);
 
   const handleTrackShipment = useCallback(async () => {
     if (!trackingCode.trim()) {
@@ -296,7 +313,20 @@ export default function ReceiverDashboard() {
             </View>
           ) : null}
           <SidebarLink text="TRACK DELIVERY" isActive={activeMenu === 'TRACK'} onPress={() => setActiveMenu('TRACK')} />
-          <SidebarLink text="HELP" isActive={activeMenu === 'HELP'} onPress={() => setActiveMenu('HELP')} />
+     <TouchableOpacity
+  onPress={() => navigation.navigate('SupportChat', { userId: '68eca0dbcbe52ca522fe826d' })}
+
+  style={{
+    backgroundColor: "#4A90E2",
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 10,
+  }}
+>
+  <Text style={{ color: "white", fontWeight: "bold" }}>HELP</Text>
+</TouchableOpacity>
+
         </View>
 
         <ScrollView contentContainerStyle={styles.content}>
@@ -353,7 +383,7 @@ const modalStyles = StyleSheet.create({
   centeredView: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',// Dark overlay
+    alignItems: 'center',
   },
   modalView: {
     margin: 20,

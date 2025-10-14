@@ -71,6 +71,15 @@ model Payment {
   platformFee Float?
 }
 
+model Agent {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  fullName  String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  messages  SupportMessage[] @relation("AgentMessages")
+}
+
 model SupportMessage {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   userId    String   @db.ObjectId       
@@ -79,4 +88,6 @@ model SupportMessage {
   sentBy    String   
   status    String   @default("unread") 
   createdAt DateTime @default(now())
+
+  agent Agent? @relation("AgentMessages", fields: [agentId], references: [id])
 }
