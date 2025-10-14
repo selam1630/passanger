@@ -35,24 +35,41 @@ const io = new Server(server, {
 });
 io.on('connection', (socket) => {
   console.log('New client connected', socket.id);
-  const testRoom = '68eca0dbcbe52ca522fe826d';
-  socket.join(testRoom);
-  console.log(`Socket ${socket.id} joined room ${testRoom}`);
-  setTimeout(() => {
-    const testMessage = {
-      userId: testRoom,
-      agentId: 'AGENT_1',
-      message: 'Hello from backend!',
-      sentBy: 'agent',
-      createdAt: new Date(),
-    };
-    io.to(testRoom).emit('receiveMessage', testMessage);
-    console.log('Sent test message to room:', testRoom);
-  }, 2000);
+
+  socket.on('joinRoom', async (roomId) => {
+    socket.join(roomId);
+    console.log(`Socket ${socket.id} joined room ${roomId}`);
+    const messages = await prisma.supportMessage.findMany({
+      where: { userId: roomId },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    socket.emit('loadMessages', messages);
+  });
+
+  socket.on('sendMessage', async (data) => {
+    try {
+      const newMsg = await prisma.supportMessage.create({
+        data: {
+          userId: data.userId,
+          agentId: data.agentId || null,
+          message: data.message,
+          sentBy: data.sentBy,
+        },
+      });
+      io.to(data.userId).emit('receiveMessage', newMsg);
+      if (data.agentId) {
+        io.to(data.agentId).emit('receiveMessage', newMsg);
+      }
+    } catch (err) {
+      console.error('Error saving support message:', err);
+    }
+  });
 
   socket.on('disconnect', () => {
     console.log('Client disconnected', socket.id);
   });
 });
+
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
