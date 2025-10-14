@@ -1,34 +1,136 @@
-import React from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, Image, ScrollView, StatusBar, Platform } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import React, { useEffect, useRef } from 'react';
+import { 
+  StyleSheet,
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
+  ScrollView,
+  StatusBar,
+  Platform,
+  Dimensions,
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { VideoView, useVideoPlayer } from 'expo-video';
+
+const { width } = Dimensions.get('window');
+const isWeb = Platform.OS === 'web';
+
+const logoImage = require('../assets/logo.png');
+const backgroundVideo = require('../assets/background.mp4');
 
 const COLORS = {
-  BACKGROUND_LIGHT: '#F7F8FC',
-  BACKGROUND_DARK: '#2D4B46',
-  ACCENT_GOLD: '#FFB733',
-  TEXT_DARK: '#333333',
+  BACKGROUND_LIGHT: '#F4F7FB', // Soft light background
+  BACKGROUND_DARK: '#2D4B46', 
+  ACCENT_GOLD: '#FFB733', // Primary brand color
+  TEXT_DARK: '#2C3E50', // Near black for great contrast
   TEXT_LIGHT: '#FFFFFF',
-  CARD_BG: '#FFFFFF',
+  CARD_BG: '#FAFAFA', // Subtle off-white for cards
+  SHADOW_COLOR: 'rgba(45, 75, 70, 0.15)', // Shadow based on BACKGROUND_DARK
 };
-const placeholderImageUrl = "https://placehold.co/800x600/2D4B46/F7F8FC?text=Global+Logistics";
+
+const VideoCard = ({ player }) => (
+  <View style={styles.videoCard}>
+    <VideoView
+      style={styles.videoContent}
+      player={player}
+      contentFit="cover"
+    />
+  </View>
+);
+
+const ServiceItem = ({ title, description, index }) => {
+  const isOdd = index % 2 !== 0;
+  
+  // Icon placeholder based on index
+  const iconText = index === 0 ? '✈️' : index === 1 ? '📦' : index === 2 ? 'GPS' : 'B2B';
+
+  return (
+    <View style={[
+      styles.serviceCard,
+      isWeb && { width: width > 768 ? '48%' : '100%' },
+    ]}>
+      <View style={styles.serviceIconContainer}>
+        <Text style={styles.serviceIcon}>{iconText}</Text>
+      </View>
+      <Text style={styles.serviceTitle}>{title}</Text>
+      <Text style={styles.serviceDescription}>{description}</Text>
+    </View>
+  );
+};
+
+// --- Feature Item Component (Used in About Section) ---
+const FeatureItem = ({ title, description }) => (
+    <View style={styles.featureItem}>
+        <View style={styles.featureBullet} />
+        <View style={styles.featureTextContainer}>
+            <Text style={styles.featureTitle}>{title}</Text>
+            <Text style={styles.featureDescription}>{description}</Text>
+        </View>
+    </View>
+);
+
 export default function LandingPage() {
   const navigation = useNavigation();
+  const scrollViewRef = useRef(null);
+  const servicesRef = useRef(null);
+  const aboutRef = useRef(null);
+
+  const player = useVideoPlayer(backgroundVideo, (player) => {
+    player.loop = true;
+    player.muted = true;
+    player.controls = false;
+    player.play();
+  });
+
+  useEffect(() => {
+    if (player) player.play();
+  }, [player]);
+
+  const services = [
+    { title: 'Courier Delivery', description: 'Fast, secure delivery for small packages across cities and towns.' },
+    { title: 'Freight & Cargo', description: 'Reliable freight service for large shipments, with real-time tracking.' },
+    { title: 'Package Tracking', description: 'Track your parcels anytime with live updates from sender to receiver.' },
+    { title: 'Business Solutions', description: 'Custom logistics solutions for companies, from bulk shipping to supply chain management.' },
+  ];
+
+  const coreValues = [
+    { title: 'Max Speed', description: 'Fastest delivery times in the region via smart routing.' },
+    { title: 'Zero Worry', description: 'Fully secure, insured, and tracked packages.' },
+    { title: 'Full Coverage', description: 'Connecting every town and city in Ethiopia.' },
+    { title: 'Honest Rates', description: 'Clear, upfront, and transparent pricing.' },
+  ];
+
+  const scrollToSection = (ref) => {
+    ref.current?.measureLayout(
+      scrollViewRef.current.getInnerViewNode(),
+      (x, y) => {
+        scrollViewRef.current.scrollTo({ y: y - (isWeb ? 70 : 0), animated: true });
+      }
+    );
+  };
+
   return (
-    <LinearGradient colors={[COLORS.BACKGROUND_LIGHT, COLORS.BACKGROUND_LIGHT]} style={styles.container}>
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" />
+
       <ScrollView
+        ref={scrollViewRef}
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
       >
-        <StatusBar barStyle="dark-content" />
-
+        {/* --- Header (Styled to float) --- */}
         <View style={styles.header}>
-          <Text style={styles.logo}>FlyBridge</Text>
+          <Image source={logoImage} style={styles.logoImage} resizeMode="contain" />
+
           <View style={styles.nav}>
-            <Text style={styles.navItem}>Services</Text>
-            <Text style={styles.navItem}>Partners</Text>
-            <Text style={styles.navItem}>Technology</Text>
-            <Text style={styles.navItem}>About</Text>
+            <TouchableOpacity onPress={() => scrollToSection(servicesRef)}>
+              <Text style={styles.navItemDark}>SERVICES</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => scrollToSection(aboutRef)}>
+              <Text style={styles.navItemDark}>ABOUT</Text>
+            </TouchableOpacity>
+
             <TouchableOpacity
               style={styles.getStartedBtn}
               onPress={() => navigation.navigate('SignUp')}
@@ -38,141 +140,252 @@ export default function LandingPage() {
           </View>
         </View>
 
+        {/* --- Hero Section --- */}
         <View style={styles.heroSection}>
           <View style={styles.heroLeft}>
-            <Text style={styles.heroTitle}>The Hardest Working Team in Transport</Text>
+            <Text style={styles.heroTitle}>Deliver Smarter. Connect Faster.</Text>
             <Text style={styles.heroSubtitle}>
-              We offer end-to-end logistics excellence, through elevated customer care globally.
+              SwiftLink bridges senders and carriers seamlessly — helping businesses
+              and individuals move packages quickly, securely, and affordably across Ethiopia and beyond.
             </Text>
-            <TouchableOpacity style={styles.quoteBtn}>
-              <Text style={styles.quoteText}>Request a Quote →</Text>
+            <TouchableOpacity style={styles.quoteBtn} onPress={() => scrollToSection(servicesRef)}>
+              <Text style={styles.quoteText}>Explore Services →</Text>
             </TouchableOpacity>
           </View>
 
           <View style={styles.heroRight}>
-            <Image
-              source={{ uri: placeholderImageUrl }}
-              style={styles.heroImage}
-              resizeMode="cover"
-            />
+            <VideoCard player={player} />
           </View>
         </View>
+
+        {/* --- Services Section --- */}
+        <View ref={servicesRef} style={styles.servicesSection}>
+          <Text style={styles.sectionTitle}>Our Services</Text>
+          <View style={styles.servicesGrid}>
+            {services.map((service, index) => (
+              <ServiceItem key={index} {...service} index={index} />
+            ))}
+          </View>
+        </View>
+<View ref={aboutRef} style={styles.aboutSection}>
+  <Text style={[styles.sectionTitle, { color: COLORS.TEXT_LIGHT }]}>Why SwiftLink?</Text>
+  
+  <View style={styles.aboutContent}>
+    <View style={styles.aboutMission}>
+      <Text style={styles.aboutMissionTitle}>Logistics, Simplified</Text>
+      <Text style={[styles.aboutText, { color: 'rgba(255,255,255,0.85)', marginBottom: 20 }]}>
+        SwiftLink makes shipping fast, reliable, and affordable. We connect senders and carriers seamlessly across Ethiopia.
+      </Text>
+      <TouchableOpacity style={styles.aboutCtaBtn} onPress={() => navigation.navigate('Contact')}>
+        <Text style={styles.aboutCtaText}>Connect With Us</Text>
+      </TouchableOpacity>
+    </View>
+
+    {/* Core Values / Highlights */}
+    <View style={styles.aboutFeatures}>
+      {coreValues.slice(0, 2).map((feature, index) => (
+        <FeatureItem key={index} {...feature} />
+      ))}
+    </View>
+  </View>
+</View>
       </ScrollView>
-    </LinearGradient>
+    </View>
   );
 }
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.BACKGROUND_LIGHT,
-  },
-  scroll: {
-    flexGrow: 1,
-    paddingHorizontal: Platform.OS === 'web' ? 100 : 20,
-    paddingVertical: 50,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 30,
-    flexWrap: 'wrap',
-  },
-  logo: {
-    color: COLORS.ACCENT_GOLD,
-    fontSize: 28,
-    fontWeight: 'bold',
-  },
-  nav: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    marginTop: Platform.OS === 'web' ? 0 : 10,
-  },
-  navItem: {
-    color: COLORS.TEXT_DARK, 
-    marginHorizontal: 10,
-    fontSize: 16,
-    marginVertical: 5,
-  },
-  getStartedBtn: {
-    backgroundColor: COLORS.ACCENT_GOLD,
+  container: { flex: 1, backgroundColor: COLORS.BACKGROUND_LIGHT },
+  scroll: { flexGrow: 1, paddingHorizontal: isWeb ? 60 : 20, paddingTop: 10 },
+  header: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    marginBottom: isWeb ? 0 : 30, 
+    flexWrap: 'wrap', 
+    zIndex: 10,
     paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 25,
-    marginLeft: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
+    backgroundColor: COLORS.BACKGROUND_LIGHT,
+    borderBottomWidth: isWeb ? 1 : 0, 
+    borderBottomColor: isWeb ? '#E0E0E0' : 'transparent',
   },
-  getStartedText: {
-    color: COLORS.BACKGROUND_DARK,
-    fontWeight: 'bold',
-    fontSize: 16,
+  logoImage: { width: isWeb ? 100 : 80, height: isWeb ? 100 : 80, borderRadius: 128 },
+  nav: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', marginLeft: 'auto' },
+  navItemDark: { color: COLORS.TEXT_DARK, marginHorizontal: isWeb ? 15 : 8, fontSize: isWeb ? 15 : 14, fontWeight: '500', marginVertical: 5 },
+  getStartedBtn: { 
+    backgroundColor: COLORS.ACCENT_GOLD, 
+    paddingVertical: 10, 
+    paddingHorizontal: 20, 
+    borderRadius: 8, 
+    marginLeft: 20, 
+    shadowColor: COLORS.ACCENT_GOLD, 
+    shadowOffset: { width: 0, height: 2 }, 
+    shadowOpacity: 0.5, 
+    shadowRadius: 5, 
+    elevation: 5 
   },
-  heroSection: {
-    flexDirection: Platform.OS === 'web' ? 'row' : 'column',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: COLORS.BACKGROUND_DARK,
-    borderRadius: 20,
-    padding: 40, 
-    minHeight: 500,
-    shadowColor: '#000',
+  getStartedText: { color: COLORS.BACKGROUND_DARK, fontWeight: 'bold', fontSize: 16 },
+  heroSection: { 
+    backgroundColor: COLORS.BACKGROUND_DARK, 
+    paddingHorizontal: isWeb ? 60 : 20, 
+    marginHorizontal: isWeb ? -60 : -20, 
+    flexDirection: isWeb ? 'row' : 'column', 
+    alignItems: 'flex-start', 
+    justifyContent: 'space-between', 
+    minHeight: 500, 
+    paddingTop: isWeb ? 80 : 30, 
+    paddingBottom: 50 
+  },
+  heroLeft: { flex: isWeb ? 0.6 : 1, justifyContent: 'flex-start', paddingRight: isWeb ? 40 : 0, marginBottom: isWeb ? 0 : 40 },
+  heroTitle: { color: COLORS.TEXT_LIGHT, fontSize: isWeb ? 54 : 38, fontWeight: '800', marginBottom: 20, lineHeight: isWeb ? 60 : 45, maxWidth: 600 },
+  heroSubtitle: { color: 'rgba(255, 255, 255, 0.8)', fontSize: 16, marginBottom: 30, lineHeight: 24 },
+  quoteBtn: { 
+    backgroundColor: COLORS.ACCENT_GOLD, 
+    paddingVertical: 15, 
+    paddingHorizontal: 30, 
+    borderRadius: 8, 
+    width: 250, 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    shadowColor: COLORS.ACCENT_GOLD, 
+    shadowOffset: { width: 0, height: 4 }, 
+    shadowOpacity: 0.5, 
+    shadowRadius: 6, 
+    elevation: 6 
+  },
+  quoteText: { color: COLORS.BACKGROUND_DARK, fontWeight: 'bold', fontSize: 17 },
+  heroRight: { flex: isWeb ? 0.4 : 1, alignItems: 'flex-end', justifyContent: 'flex-start', paddingLeft: isWeb ? 20 : 0, minHeight: isWeb ? 400 : undefined },
+  videoCard: { width: '100%', height: 380, backgroundColor: 'black', borderRadius: 12, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.2)' },
+  videoContent: { width: '100%', height: '100%' },
+  servicesSection: { paddingVertical: 80, backgroundColor: COLORS.BACKGROUND_LIGHT, paddingHorizontal: isWeb ? 60 : 20 },
+  servicesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: isWeb ? 'space-between' : 'center',
+    maxWidth: 1200,
+    alignSelf: 'center',
+  },
+  sectionTitle: { fontSize: isWeb ? 42 : 32, fontWeight: '800', color: COLORS.TEXT_DARK, marginBottom: 50, textAlign: 'center' },
+  serviceCard: {
+    backgroundColor: COLORS.CARD_BG,
+    padding: 30,
+    marginBottom: isWeb ? 30 : 20,
+    borderRadius: 12,
+    shadowColor: COLORS.SHADOW_COLOR,
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.2,
-    shadowRadius: 15,
+    shadowRadius: 20,
     elevation: 10,
+    position: 'relative',
+    overflow: 'hidden',
+    minHeight: 180,
+    width: isWeb ? width > 768 ? '48%' : '100%' : '100%', 
+    borderTopWidth: 4, 
+    borderTopColor: COLORS.ACCENT_GOLD + '80',
   },
-  heroLeft: {
-    flex: 1,
-    justifyContent: 'center',
-    marginBottom: Platform.OS === 'web' ? 0 : 20,
-  },
-  heroTitle: {
-    color: COLORS.TEXT_LIGHT,
-    fontSize: 38,
-    fontWeight: 'bold',
-    marginBottom: 15,
-  },
-  heroSubtitle: {
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontSize: 16,
-    marginBottom: 20,
-    lineHeight: 24,
-  },
-  quoteBtn: {
-    backgroundColor: COLORS.ACCENT_GOLD,
-    paddingVertical: 15,
-    paddingHorizontal: 30,
-    borderRadius: 30,
-    shadowColor: COLORS.ACCENT_GOLD,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.5,
-    shadowRadius: 6,
-    elevation: 6,
-  },
-  quoteText: {
-    color: COLORS.BACKGROUND_DARK,
-    fontWeight: 'bold',
-    fontSize: 17,
-    textAlign: 'center',
-  },
-  heroRight: {
-    flex: 1,
+  serviceIconContainer: {
+    width: 50, 
+    height: 50, 
+    borderRadius: 25, 
+    backgroundColor: COLORS.ACCENT_GOLD + '15', 
+    justifyContent: 'center', 
     alignItems: 'center',
-    justifyContent: 'center',
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: COLORS.ACCENT_GOLD + '50',
   },
-  heroImage: {
-    width: Platform.OS === 'web' ? 400 : '100%',
-    height: 300,
-    borderRadius: 15, 
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 8,
+  serviceIcon: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS.BACKGROUND_DARK,
+  },
+  serviceTitle: { fontSize: 22, fontWeight: '700', marginBottom: 10, color: COLORS.TEXT_DARK },
+  serviceDescription: { fontSize: 15, color: COLORS.TEXT_DARK, lineHeight: 22 },
+  aboutSection: { 
+  paddingVertical: 40, // reduce from 100 to 40
+  backgroundColor: COLORS.BACKGROUND_DARK, 
+  marginHorizontal: isWeb ? -60 : -20, 
+  paddingHorizontal: isWeb ? 60 : 20,
+  alignItems: 'center',
+  position: 'relative',
+},
+aboutContent: {
+  flexDirection: isWeb ? 'row' : 'column',
+  maxWidth: 1200,
+  width: '100%',
+  justifyContent: 'space-between',
+  alignItems: isWeb ? 'flex-start' : 'center',
+},
+aboutMission: {
+  flex: isWeb ? 1 : undefined,
+  paddingRight: isWeb ? 30 : 0, // slightly reduced
+  marginBottom: isWeb ? 0 : 20, // reduce spacing for mobile
+},
+aboutFeatures: {
+  flex: isWeb ? 1 : undefined,
+  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+  padding: 20, // reduce padding from 30 to 20
+  borderRadius: 12,
+  borderLeftWidth: 3,
+  borderLeftColor: COLORS.ACCENT_GOLD,
+},
+aboutMissionTitle: {
+    fontSize: isWeb ? 28 : 20,  // slightly smaller
+    fontWeight: '700', 
+    color: COLORS.ACCENT_GOLD, 
+    marginBottom: 15, // reduce spacing
+    textAlign: isWeb ? 'left' : 'center',
+},
+aboutText: { 
+  fontSize: isWeb ? 16 : 14, // slightly smaller text
+  lineHeight: isWeb ? 24 : 20, 
+  maxWidth: 600, // reduce width a little
+  marginBottom: 15, // optional spacing
+},
+aboutCtaBtn: {
+  backgroundColor: COLORS.ACCENT_GOLD, 
+  paddingVertical: 12, // reduce vertical padding
+  paddingHorizontal: 30, // reduce horizontal padding
+  borderRadius: 8, 
+  shadowColor: '#000', 
+  shadowOffset: { width: 0, height: 3 }, 
+  shadowOpacity: 0.3, 
+  shadowRadius: 4, 
+  elevation: 6,
+  alignSelf: isWeb ? 'flex-start' : 'center',
+},
+aboutCtaText: {
+  color: COLORS.BACKGROUND_DARK, 
+  fontWeight: 'bold', 
+  fontSize: 16, 
+},
+  featureItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 20,
+    maxWidth: 500,
+  },
+  featureBullet: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: COLORS.ACCENT_GOLD,
+    marginTop: 8,
+    marginRight: 15,
+  },
+  featureTextContainer: {
+    flex: 1,
+  },
+  featureTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: COLORS.TEXT_LIGHT,
+    marginBottom: 5,
+  },
+  featureDescription: {
+    fontSize: 15,
+    color: 'rgba(255, 255, 255, 0.7)',
+    lineHeight: 22,
   },
 });
