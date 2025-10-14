@@ -78,6 +78,7 @@ model Agent {
   password  String
   createdAt DateTime @default(now())
   messages  SupportMessage[] @relation("AgentMessages")
+  role      String   @default("agent")
 }
 
 model SupportMessage {

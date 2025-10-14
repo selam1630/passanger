@@ -13,14 +13,15 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
+
 const COLORS = {
-  BACKGROUND_LIGHT: '#F7F8FC',      
+  BACKGROUND_LIGHT: '#F7F8FC',
   BACKGROUND_DARK: '#2D4B46',
   ACCENT_GOLD: '#FFB733',
   TEXT_DARK: '#333333',
   TEXT_LIGHT: '#FFFFFF',
   INPUT_BG: 'rgba(45, 75, 70, 0.05)',
-  CARD_BG: '#FFFFFF',              
+  CARD_BG: '#FFFFFF',
   STATUS_GREEN: '#4CAF50',
 };
 
@@ -28,21 +29,22 @@ export default function SignInScreen() {
   const navigation = useNavigation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [message, setMessage] = useState(''); 
-  
+  const [message, setMessage] = useState('');
+  const [role, setRole] = useState('sender'); 
+
   const handleSignIn = async () => {
     try {
       const response = await fetch('http://localhost:5000/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, role }),
       });
       const data = await response.json();
 
       if (response.ok) {
-        console.log('Login successful:', data);
         setMessage('Login successful!');
         const token = data.token;
+
         const userRes = await fetch('http://localhost:5000/api/auth/me', {
           method: 'GET',
           headers: {
@@ -52,19 +54,18 @@ export default function SignInScreen() {
         });
 
         const userData = await userRes.json();
-
         if (userData.role === 'carrier') {
-          navigation.navigate('CarrierDashboard', { token, user: userData });
-        } else if (userData.role === 'sender') {
-          navigation.navigate('senderDashboard', { token, user: userData });
-        } else if (userData.role === 'receiver') {
-          navigation.navigate('ReceiverDashboard', { token, user: userData });
-        } else {
-          Alert.alert('Error', 'Unknown role. Cannot navigate.');
-        }
-
+  navigation.navigate('CarrierDashboard', { token, user: userData });
+} else if (userData.role === 'sender') {
+  navigation.navigate('senderDashboard', { token, user: userData });
+} else if (userData.role === 'receiver') {
+  navigation.navigate('ReceiverDashboard', { token, user: userData });
+} else if (userData.role === 'agent') {
+  navigation.navigate('AgentDashboard', { token, user: userData }); // <-- pass full user object
+} else {
+  Alert.alert('Error', 'Unknown role. Cannot navigate.');
+}
       } else {
-        console.error('Login failed:', data.message || data);
         setMessage(data.message || 'Login failed');
       }
     } catch (error) {
@@ -72,7 +73,7 @@ export default function SignInScreen() {
       setMessage('An error occurred. Please try again.');
     }
   };
-  
+
   return (
     <LinearGradient colors={[COLORS.BACKGROUND_LIGHT, COLORS.BACKGROUND_LIGHT]} style={styles.container}>
       <StatusBar barStyle="dark-content" />
@@ -80,14 +81,33 @@ export default function SignInScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
-        <ScrollView
-          contentContainerStyle={styles.scroll}
-          keyboardShouldPersistTaps="handled"
-        >
+        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <View style={styles.card}>
             <Text style={styles.logo}>FlyBridge</Text>
             <Text style={styles.title}>Welcome Back</Text>
             <Text style={styles.subtitle}>Sign in to continue your journey</Text>
+
+            {/* Role Selector */}
+            <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 20 }}>
+              {['user', 'agent'].map(r => (
+                <TouchableOpacity
+                  key={r}
+                  onPress={() => setRole(r)}
+                  style={{
+                    marginHorizontal: 5,
+                    paddingVertical: 5,
+                    paddingHorizontal: 15,
+                    borderRadius: 10,
+                    backgroundColor: role === r ? COLORS.ACCENT_GOLD : '#eee',
+                  }}
+                >
+                  <Text style={{ color: role === r ? COLORS.BACKGROUND_DARK : '#333', fontWeight: 'bold' }}>
+                    {r.charAt(0).toUpperCase() + r.slice(1)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
             {message ? (
               <Text
                 style={{
@@ -100,10 +120,11 @@ export default function SignInScreen() {
                 {message}
               </Text>
             ) : null}
+
             <TextInput
               style={styles.input}
               placeholder="Email"
-              placeholderTextColor="#999" 
+              placeholderTextColor="#999"
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -120,6 +141,7 @@ export default function SignInScreen() {
             <TouchableOpacity style={styles.signInBtn} onPress={handleSignIn}>
               <Text style={styles.signInText}>Sign In</Text>
             </TouchableOpacity>
+
             <View style={styles.footer}>
               <Text style={styles.footerText}>Don’t have an account?</Text>
               <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
@@ -135,12 +157,7 @@ export default function SignInScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.BACKGROUND_LIGHT },
-  scroll: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 60,
-  },
+  scroll: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 60 },
   card: {
     backgroundColor: COLORS.CARD_BG,
     borderRadius: 15,
@@ -153,31 +170,14 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 5,
   },
-  logo: {
-    color: COLORS.ACCENT_GOLD,
-    fontSize: 30,
-    fontWeight: 'bold',
-    alignSelf: 'center',
-    marginBottom: 20,
-  },
-  title: {
-    color: COLORS.TEXT_DARK,
-    fontSize: 26,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 5,
-  },
-  subtitle: {
-    color: '#888',
-    textAlign: 'center',
-    marginBottom: 30,
-    fontSize: 14,
-  },
+  logo: { color: COLORS.ACCENT_GOLD, fontSize: 30, fontWeight: 'bold', alignSelf: 'center', marginBottom: 20 },
+  title: { color: COLORS.TEXT_DARK, fontSize: 26, fontWeight: 'bold', textAlign: 'center', marginBottom: 5 },
+  subtitle: { color: '#888', textAlign: 'center', marginBottom: 30, fontSize: 14 },
   input: {
     backgroundColor: COLORS.INPUT_BG,
     borderRadius: 10,
     padding: 15,
-    color: COLORS.TEXT_DARK, 
+    color: COLORS.TEXT_DARK,
     marginBottom: 15,
     width: '100%',
     fontSize: 16,
@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(45, 75, 70, 0.1)',
   },
   signInBtn: {
-    backgroundColor: COLORS.ACCENT_GOLD, 
+    backgroundColor: COLORS.ACCENT_GOLD,
     paddingVertical: 15,
     borderRadius: 10,
     marginTop: 10,
@@ -195,17 +195,8 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 5,
   },
-  signInText: {
-    color: COLORS.BACKGROUND_DARK,
-    fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 25,
-  },
+  signInText: { color: COLORS.BACKGROUND_DARK, fontSize: 16, fontWeight: 'bold', textAlign: 'center' },
+  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 25 },
   footerText: { color: COLORS.TEXT_DARK, fontSize: 14 },
   link: { color: COLORS.ACCENT_GOLD, fontWeight: 'bold', fontSize: 14 },
 });

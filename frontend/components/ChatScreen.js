@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import socket from './socket';
+
 const COLORS = {
   BACKGROUND_LIGHT: '#F7F8FC',       
   BACKGROUND_DARK: '#2D4B46',
@@ -23,7 +24,7 @@ const COLORS = {
 };
 
 const SupportChat = ({ route }) => {
-  const { userId } = route.params;
+  const { userId, agentId, role } = route.params; // include agentId & role
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
 
@@ -31,12 +32,16 @@ const SupportChat = ({ route }) => {
     socket.connect();
     socket.emit('joinRoom', userId);
     console.log(`🟢 Joined room: ${userId}`);
+
     socket.on('loadMessages', (msgs) => {
       const sorted = msgs.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
       setMessages(sorted);
     });
+
     socket.on('receiveMessage', (message) => {
-      setMessages((prev) => [...prev, message]);
+      if (message.userId === userId) {
+        setMessages((prev) => [...prev, message]);
+      }
     });
 
     return () => {
@@ -48,18 +53,19 @@ const SupportChat = ({ route }) => {
   }, [userId]);
 
   const sendMessage = () => {
-  if (!input.trim()) return;
+    if (!input.trim()) return;
 
-  const data = {
-    userId,
-    message: input.trim(),
-    sentBy: 'user',
-    agentId: null,
+    const data = {
+      userId,
+      agentId: agentId || null,
+      sentBy: role || 'user', // role: 'user' or 'agent'
+      message: input.trim(),
+    };
+
+    socket.emit('sendMessage', data);
+    setInput('');
   };
 
-  socket.emit('sendMessage', data); 
-  setInput(''); 
-};
   const renderMessageItem = ({ item }) => {
     const isUser = item.sentBy === 'user';
     const time = item.createdAt 
@@ -87,10 +93,9 @@ const SupportChat = ({ route }) => {
         <View style={styles.container}>
           <FlatList
             data={messages}
-            keyExtractor={(item) => item.id || item.createdAt.toString()}
+            keyExtractor={(item, index) => item.id || index.toString()}
             renderItem={renderMessageItem}
             contentContainerStyle={styles.flatListContent}
-            inverted
           />
           <View style={styles.inputContainer}>
             <TextInput
@@ -120,34 +125,26 @@ export default SupportChat;
 const styles = StyleSheet.create({
   flexOne: { flex: 1 },
   container: { flex: 1, backgroundColor: COLORS.BACKGROUND_LIGHT },
-  flatListContent: {
-    paddingHorizontal: 10,
-    paddingTop: 10,
-    justifyContent: 'flex-end',
-    flexGrow: 1,
-    transform: [{ scaleY: -1 }],
-  },
-  messageRow: { marginVertical: 4, maxWidth: '80%', transform: [{ scaleY: -1 }] },
+  flatListContent: { padding: 10 },
+  messageRow: { marginVertical: 4, maxWidth: '80%' },
   userRow: { alignSelf: 'flex-end' },
   agentRow: { alignSelf: 'flex-start' },
   messageBubble: {
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 15,
-    borderBottomLeftRadius: 15,
-    borderBottomRightRadius: 15,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 1,
     elevation: 1,
   },
-  userBubble: { backgroundColor: COLORS.ACCENT_GOLD, borderBottomRightRadius: 4, marginRight: 5 },
-  agentBubble: { backgroundColor: COLORS.CARD_BG, borderBottomLeftRadius: 4, marginLeft: 5, borderWidth: 1, borderColor: COLORS.INPUT_BG },
+  userBubble: { backgroundColor: COLORS.ACCENT_GOLD, marginRight: 5 },
+  agentBubble: { backgroundColor: COLORS.CARD_BG, marginLeft: 5, borderWidth: 1, borderColor: COLORS.INPUT_BG },
   userMessageText: { fontSize: 15, color: COLORS.BACKGROUND_DARK },
   agentMessageText: { fontSize: 15, color: COLORS.TEXT_DARK },
   timestamp: { fontSize: 10, color: COLORS.BACKGROUND_DARK, opacity: 0.7, marginTop: 2, alignSelf: 'flex-end' },
   inputContainer: { flexDirection: 'row', alignItems: 'center', padding: 10, backgroundColor: COLORS.CARD_BG, borderTopWidth: 1, borderTopColor: COLORS.INPUT_BG },
-  input: { flex: 1, backgroundColor: COLORS.INPUT_BG, borderRadius: 20, paddingHorizontal: 15, paddingVertical: Platform.OS === 'ios' ? 10 : 8, marginRight: 10, maxHeight: 100, fontSize: 16, color: COLORS.TEXT_DARK, borderWidth: 1, borderColor: 'transparent' },
+  input: { flex: 1, backgroundColor: COLORS.INPUT_BG, borderRadius: 20, paddingHorizontal: 15, paddingVertical: Platform.OS === 'ios' ? 10 : 8, marginRight: 10, maxHeight: 100, fontSize: 16, color: COLORS.TEXT_DARK },
   sendButton: { backgroundColor: COLORS.ACCENT_GOLD, width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', shadowColor: COLORS.ACCENT_GOLD, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.4, shadowRadius: 3, elevation: 5 },
 });
