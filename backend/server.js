@@ -35,8 +35,6 @@ const io = new Server(server, { cors: { origin: '*' } });
 
 io.on('connection', (socket) => {
   console.log('🟢 New client connected:', socket.id);
-
-  // Join room
   socket.on('joinRoom', async (roomId) => {
     try {
       if (!roomId) return;
@@ -53,8 +51,6 @@ io.on('connection', (socket) => {
       console.error('Error loading messages:', error);
     }
   });
-
-  // Send message
   socket.on('sendMessage', async ({ userId, agentId, sentBy, message }) => {
     try {
       if (!userId || !message) return;
@@ -73,8 +69,6 @@ io.on('connection', (socket) => {
       console.error('❌ Error saving message:', error);
     }
   });
-
-  // Get users with messages for agent
   socket.on('getUsersWithMessages', async (agentId) => {
     try {
       const whereFilter = agentId

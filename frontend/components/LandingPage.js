@@ -171,8 +171,6 @@ export default function LandingPage() {
         <Text style={styles.aboutCtaText}>Connect With Us</Text>
       </TouchableOpacity>
     </View>
-
-    {/* Core Values / Highlights */}
     <View style={styles.aboutFeatures}>
       {coreValues.slice(0, 2).map((feature, index) => (
         <FeatureItem key={index} {...feature} />
