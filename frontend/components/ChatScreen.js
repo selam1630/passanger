@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import socket from './socket';
+import DashboardHeader from './dashboardheader';
 
 const COLORS = {
   BACKGROUND_LIGHT: '#F7F8FC',       
@@ -24,7 +25,7 @@ const COLORS = {
 };
 
 const SupportChat = ({ route }) => {
-  const { userId, agentId, role } = route.params; // include agentId & role
+  const { userId, agentId, role } = route.params; 
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
 
@@ -58,7 +59,7 @@ const SupportChat = ({ route }) => {
     const data = {
       userId,
       agentId: agentId || null,
-      sentBy: role || 'user', // role: 'user' or 'agent'
+      sentBy: role || 'user', 
       message: input.trim(),
     };
 
@@ -85,39 +86,46 @@ const SupportChat = ({ route }) => {
   };
 
   return (
-    <SafeAreaView style={styles.flexOne}>
-      <KeyboardAvoidingView
-        style={styles.flexOne}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <View style={styles.container}>
-          <FlatList
-            data={messages}
-            keyExtractor={(item, index) => item.id || index.toString()}
-            renderItem={renderMessageItem}
-            contentContainerStyle={styles.flatListContent}
+  <SafeAreaView style={styles.flexOne}>
+    <KeyboardAvoidingView
+      style={styles.flexOne}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <View style={styles.container}>
+        {/* 1️⃣ DashboardHeader goes here */}
+        <DashboardHeader user={{ fullName: 'User', email: 'user@example.com' }} />
+        {/* You can replace the user prop with the real user object if you have it */}
+
+        {/* 2️⃣ Chat messages */}
+        <FlatList
+          data={messages}
+          keyExtractor={(item, index) => item.id || index.toString()}
+          renderItem={renderMessageItem}
+          contentContainerStyle={styles.flatListContent}
+        />
+
+        {/* 3️⃣ Input area */}
+        <View style={styles.inputContainer}>
+          <TextInput
+            value={input}
+            onChangeText={setInput}
+            placeholder="Type a message..."
+            placeholderTextColor="#999"
+            style={styles.input}
+            multiline
           />
-          <View style={styles.inputContainer}>
-            <TextInput
-              value={input}
-              onChangeText={setInput}
-              placeholder="Type a message..."
-              placeholderTextColor="#999"
-              style={styles.input}
-              multiline
-            />
-            <TouchableOpacity 
-              style={styles.sendButton} 
-              onPress={sendMessage}
-              disabled={!input.trim()}
-            >
-              <Ionicons name="send" size={20} color={COLORS.BACKGROUND_DARK} />
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity 
+            style={styles.sendButton} 
+            onPress={sendMessage}
+            disabled={!input.trim()}
+          >
+            <Ionicons name="send" size={20} color={COLORS.BACKGROUND_DARK} />
+          </TouchableOpacity>
         </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
-  );
+      </View>
+    </KeyboardAvoidingView>
+  </SafeAreaView>
+);
 };
 
 export default SupportChat;

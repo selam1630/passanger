@@ -17,7 +17,6 @@ export default function DashboardHeader({ user }) {
     <View style={styles.header}>
       <View style={styles.leftSection}>
         <Image source={logoImage} style={styles.logo} resizeMode="contain" />
-        <Text style={styles.title}>Receiver Dashboard</Text>
       </View>
       <View style={styles.rightSection}>
         <TouchableOpacity

@@ -16,6 +16,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Slider from '@react-native-community/slider';
+import DashboardHeader from '../dashboardheader';
 const SidebarLink = ({ text, isActive, onPress }) => (
   <TouchableOpacity
     style={[
@@ -172,6 +173,7 @@ useEffect(() => {
   return (
     <LinearGradient colors={['#F7F8FC', '#F7F8FC']} style={styles.container}>
       <StatusBar barStyle="dark-content" />
+      <DashboardHeader />
       <View style={styles.mainWrapper}>
         <View style={styles.sidebar}>
           <View style={styles.profileContainer}>
@@ -181,11 +183,18 @@ useEffect(() => {
             <Text style={styles.profileEmail}>alex.johnson@gmail.com</Text>
           </View>
           <SidebarLink text="DASHBOARD" isActive={activeMenu === 'DASHBOARD'} onPress={() => setActiveMenu('DASHBOARD')} />
-          <SidebarLink text="FLIGHTS" isActive={activeMenu === 'FLIGHTS'} onPress={() => setActiveMenu('FLIGHTS')} />
-          <SidebarLink text="WALLET" isActive={activeMenu === 'WALLET'} onPress={() => setActiveMenu('WALLET')} />
-          <SidebarLink text="REPORTS" isActive={activeMenu === 'REPORTS'} onPress={() => setActiveMenu('REPORTS')} />
-          <View style={styles.separator} />
-          <SidebarLink text="STATISTICS" isActive={activeMenu === 'STATISTICS'} onPress={() => setActiveMenu('STATISTICS')} />
+         <TouchableOpacity
+           onPress={() => navigation.navigate('SupportChat', { userId: '68eb15ad2961325b5b181310' })}
+         
+           style={{
+             backgroundColor: "",
+             padding: 2,
+             borderRadius: 8,
+             marginTop: 10,
+           }}
+         >
+           <Text style={{ color: "white", fontWeight: "bold" }}>HELP</Text>
+         </TouchableOpacity>
           <SidebarLink text="SETTINGS" isActive={activeMenu === 'SETTINGS'} onPress={() => setActiveMenu('SETTINGS')} />
           
           <View style={{ flex: 1 }} />
@@ -195,20 +204,6 @@ useEffect(() => {
           </View>
         </View>
         <ScrollView contentContainerStyle={styles.content}>
-          <View style={styles.topSummaryGrid}>
-            <View style={styles.topSummaryCard}>
-              <Text style={styles.topCardTitle}>Boeing 767</Text>
-              <Text style={styles.topCardValue}>$548</Text>
-            </View>
-            <View style={[styles.topSummaryCard, { marginHorizontal: cardSpacing }]}>
-              <Text style={styles.topCardTitle}>Airbus A311</Text>
-              <Text style={styles.topCardValue}>$620</Text>
-            </View>
-            <View style={styles.topSummaryCardRight}>
-              <Text style={styles.topCardTitle}>Total Flights</Text>
-              <Text style={styles.topCardValue}>850</Text>
-            </View>
-          </View>
           <View style={styles.mainGridRow}>
             <View style={styles.leftColumn}>
               <LastTripsCard />

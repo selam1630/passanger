@@ -7,6 +7,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import socket from '../socket';
 import { LinearGradient } from 'expo-linear-gradient';
+import DashboardHeader from '../dashboardheader';
 
 const COLORS = {
   BACKGROUND_LIGHT: '#F7F8FC',
@@ -97,7 +98,8 @@ const AgentChat = ({ route }) => {
   return (
     <LinearGradient colors={[COLORS.BACKGROUND_LIGHT, COLORS.BACKGROUND_LIGHT]} style={styles.container}>
       <SafeAreaView style={styles.mainWrapper}>
-        {/* Sidebar for web/desktop */}
+        
+        {/* Sidebar for web */}
         {Platform.OS === 'web' && (
           <View style={styles.sidebar}>
             <Text style={styles.sidebarHeader}>Live Threads</Text>
@@ -116,6 +118,9 @@ const AgentChat = ({ route }) => {
 
         {/* Main Chat Area */}
         <View style={styles.chatArea}>
+          {/* Dashboard Header */}
+          <DashboardHeader user={{ _id: agentId }} />
+
           {/* Users horizontal scroll for mobile */}
           {Platform.OS !== 'web' && (
             <ScrollView horizontal style={styles.usersContainer}>

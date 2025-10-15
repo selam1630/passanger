@@ -18,6 +18,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import Slider from '@react-native-community/slider';
 import * as WebBrowser from 'expo-web-browser';
+import DashboardHeader from '../dashboardheader';
 const COLORS = {
   BACKGROUND_LIGHT: '#F7F8FC',
   BACKGROUND_DARK: '#2D4B46',
@@ -312,6 +313,7 @@ export default function SenderDashboard({ route }) {
   return (
     <LinearGradient colors={[COLORS.BACKGROUND_LIGHT, COLORS.BACKGROUND_LIGHT]} style={styles.container}>
       <StatusBar barStyle="dark-content" />
+      <DashboardHeader />
       <View style={styles.mainWrapper}>
         <View style={styles.sidebar}>
           <View style={styles.profileContainer}>
@@ -320,11 +322,18 @@ export default function SenderDashboard({ route }) {
             <Text style={styles.profileEmail}>sender.email@example.com</Text>
           </View>
           <SidebarLink text="DASHBOARD" isActive={activeMenu === 'DASHBOARD'} onPress={() => setActiveMenu('DASHBOARD')} />
-          <SidebarLink text="BROWSE FLIGHTS" isActive={activeMenu === 'BROWSE'} onPress={() => setActiveMenu('BROWSE')} />
-          <SidebarLink text="SHIPMENTS" isActive={activeMenu === 'SHIPMENTS'} onPress={() => setActiveMenu('SHIPMENTS')} />
-          <SidebarLink text="WALLET" isActive={activeMenu === 'WALLET'} onPress={() => setActiveMenu('WALLET')} />
-          <View style={styles.separator} />
-          <SidebarLink text="TRACK DELIVERY" isActive={activeMenu === 'TRACK'} onPress={() => setActiveMenu('TRACK')} />
+           <TouchableOpacity
+                     onPress={() => navigation.navigate('SupportChat', { userId: '68eca3cb4d9377eea1b91b46' })}
+                   
+                     style={{
+                       backgroundColor: "",
+                       padding: 2,
+                       borderRadius: 8,
+                       marginTop: 10,
+                     }}
+                   >
+                     <Text style={{ color: "white", fontWeight: "bold" }}>HELP</Text>
+                   </TouchableOpacity>
           <SidebarLink text="SETTINGS" isActive={activeMenu === 'SETTINGS'} onPress={() => setActiveMenu('SETTINGS')} />
         </View>
         <View style={styles.content}>

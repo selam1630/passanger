@@ -311,7 +311,7 @@ useEffect(() => {
             <View style={styles.profileContainer}>
               <View style={styles.profileImagePlaceholder} />
               <Text style={styles.profileName}>SHIPMENT RECEIVER</Text>
-              <Text style={styles.profileEmail}>track@shipment.com</Text>
+              <Text style={styles.profileEmail}>fi@gmail.com</Text>
             </View>
           ) : null}
           <SidebarLink text="TRACK DELIVERY" isActive={activeMenu === 'TRACK'} onPress={() => setActiveMenu('TRACK')} />
