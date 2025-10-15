@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
+import Header from '../Header';
 
 const COLORS = {
   BACKGROUND_LIGHT: '#F7F8FC',
@@ -77,6 +78,7 @@ export default function SignInScreen() {
   return (
     <LinearGradient colors={[COLORS.BACKGROUND_LIGHT, COLORS.BACKGROUND_LIGHT]} style={styles.container}>
       <StatusBar barStyle="dark-content" />
+      <Header />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}

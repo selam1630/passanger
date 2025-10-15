@@ -14,6 +14,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { Picker } from '@react-native-picker/picker';
+import Header from '../Header';
 const COLORS = {
   BACKGROUND_LIGHT: '#F7F8FC',      
   BACKGROUND_DARK: '#2D4B46',
@@ -72,6 +73,7 @@ export default function SignUpScreen() {
   return (
     <LinearGradient colors={[COLORS.BACKGROUND_LIGHT, COLORS.BACKGROUND_LIGHT]} style={styles.container}>
       <StatusBar barStyle="dark-content" />
+      <Header />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}

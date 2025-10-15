@@ -15,6 +15,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import DashboardHeader from '../dashboardheader';
 
 const COLORS = {
   BACKGROUND_LIGHT: '#F7F8FC',
@@ -30,7 +31,7 @@ const COLORS = {
   DANGER: '#DC3545',
   INPUT_BG: 'rgba(45, 75, 70, 0.05)', 
 };
-
+<DashboardHeader />
 const SidebarLink = ({ text, isActive, onPress }) => (
   <TouchableOpacity
     style={[
@@ -303,6 +304,7 @@ useEffect(() => {
   return (
     <LinearGradient colors={[COLORS.BACKGROUND_LIGHT, COLORS.BACKGROUND_LIGHT]} style={styles.container}>
       <StatusBar barStyle="dark-content" />
+       <DashboardHeader user={user} />
       <View style={styles.mainWrapper}>
         <View style={styles.sidebar}>
           {Platform.OS === 'web' ? (
@@ -317,7 +319,7 @@ useEffect(() => {
   onPress={() => navigation.navigate('SupportChat', { userId: '68eca0dbcbe52ca522fe826d' })}
 
   style={{
-    backgroundColor: "#4A90E2",
+    backgroundColor: "",
     padding: 12,
     borderRadius: 8,
     alignItems: "center",
@@ -375,7 +377,6 @@ useEffect(() => {
         onConfirm={handleConfirmDelivery}
         shipment={shipmentToConfirm}
       />
-      {/* ----------------------------- */}
     </LinearGradient>
   );
 }
@@ -502,7 +503,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   activeSidebarLink: {
-    backgroundColor: COLORS.ACCENT_GOLD,
+    backgroundColor: COLORS.TEXT_LIGHT,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,

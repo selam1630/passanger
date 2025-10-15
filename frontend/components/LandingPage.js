@@ -20,13 +20,13 @@ const logoImage = require('../assets/logo.png');
 const backgroundVideo = require('../assets/background.mp4');
 
 const COLORS = {
-  BACKGROUND_LIGHT: '#F4F7FB', // Soft light background
+  BACKGROUND_LIGHT: '#F4F7FB', 
   BACKGROUND_DARK: '#2D4B46', 
-  ACCENT_GOLD: '#FFB733', // Primary brand color
-  TEXT_DARK: '#2C3E50', // Near black for great contrast
+  ACCENT_GOLD: '#FFB733',
+  TEXT_DARK: '#2C3E50', 
   TEXT_LIGHT: '#FFFFFF',
-  CARD_BG: '#FAFAFA', // Subtle off-white for cards
-  SHADOW_COLOR: 'rgba(45, 75, 70, 0.15)', // Shadow based on BACKGROUND_DARK
+  CARD_BG: '#FAFAFA', 
+  SHADOW_COLOR: 'rgba(45, 75, 70, 0.15)', 
 };
 
 const VideoCard = ({ player }) => (
@@ -41,8 +41,6 @@ const VideoCard = ({ player }) => (
 
 const ServiceItem = ({ title, description, index }) => {
   const isOdd = index % 2 !== 0;
-  
-  // Icon placeholder based on index
   const iconText = index === 0 ? '✈️' : index === 1 ? '📦' : index === 2 ? 'GPS' : 'B2B';
 
   return (
@@ -58,8 +56,6 @@ const ServiceItem = ({ title, description, index }) => {
     </View>
   );
 };
-
-// --- Feature Item Component (Used in About Section) ---
 const FeatureItem = ({ title, description }) => (
     <View style={styles.featureItem}>
         <View style={styles.featureBullet} />
@@ -119,7 +115,6 @@ export default function LandingPage() {
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
       >
-        {/* --- Header (Styled to float) --- */}
         <View style={styles.header}>
           <Image source={logoImage} style={styles.logoImage} resizeMode="contain" />
 
@@ -139,8 +134,6 @@ export default function LandingPage() {
             </TouchableOpacity>
           </View>
         </View>
-
-        {/* --- Hero Section --- */}
         <View style={styles.heroSection}>
           <View style={styles.heroLeft}>
             <Text style={styles.heroTitle}>Deliver Smarter. Connect Faster.</Text>
@@ -157,8 +150,6 @@ export default function LandingPage() {
             <VideoCard player={player} />
           </View>
         </View>
-
-        {/* --- Services Section --- */}
         <View ref={servicesRef} style={styles.servicesSection}>
           <Text style={styles.sectionTitle}>Our Services</Text>
           <View style={styles.servicesGrid}>
@@ -303,7 +294,7 @@ const styles = StyleSheet.create({
   serviceTitle: { fontSize: 22, fontWeight: '700', marginBottom: 10, color: COLORS.TEXT_DARK },
   serviceDescription: { fontSize: 15, color: COLORS.TEXT_DARK, lineHeight: 22 },
   aboutSection: { 
-  paddingVertical: 40, // reduce from 100 to 40
+  paddingVertical: 40, 
   backgroundColor: COLORS.BACKGROUND_DARK, 
   marginHorizontal: isWeb ? -60 : -20, 
   paddingHorizontal: isWeb ? 60 : 20,
@@ -319,34 +310,34 @@ aboutContent: {
 },
 aboutMission: {
   flex: isWeb ? 1 : undefined,
-  paddingRight: isWeb ? 30 : 0, // slightly reduced
-  marginBottom: isWeb ? 0 : 20, // reduce spacing for mobile
+  paddingRight: isWeb ? 30 : 0,
+  marginBottom: isWeb ? 0 : 20,
 },
 aboutFeatures: {
   flex: isWeb ? 1 : undefined,
   backgroundColor: 'rgba(255, 255, 255, 0.05)',
-  padding: 20, // reduce padding from 30 to 20
+  padding: 20,
   borderRadius: 12,
   borderLeftWidth: 3,
   borderLeftColor: COLORS.ACCENT_GOLD,
 },
 aboutMissionTitle: {
-    fontSize: isWeb ? 28 : 20,  // slightly smaller
+    fontSize: isWeb ? 28 : 20,  
     fontWeight: '700', 
     color: COLORS.ACCENT_GOLD, 
-    marginBottom: 15, // reduce spacing
+    marginBottom: 15, 
     textAlign: isWeb ? 'left' : 'center',
 },
 aboutText: { 
-  fontSize: isWeb ? 16 : 14, // slightly smaller text
+  fontSize: isWeb ? 16 : 14, 
   lineHeight: isWeb ? 24 : 20, 
-  maxWidth: 600, // reduce width a little
-  marginBottom: 15, // optional spacing
+  maxWidth: 600,
+  marginBottom: 15, 
 },
 aboutCtaBtn: {
   backgroundColor: COLORS.ACCENT_GOLD, 
-  paddingVertical: 12, // reduce vertical padding
-  paddingHorizontal: 30, // reduce horizontal padding
+  paddingVertical: 12, 
+  paddingHorizontal: 30,
   borderRadius: 8, 
   shadowColor: '#000', 
   shadowOffset: { width: 0, height: 3 }, 
