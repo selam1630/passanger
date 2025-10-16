@@ -40,10 +40,7 @@ export default function DashboardHeader({ user }) {
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.actionButton, styles.logoutButton]}
-          onPress={() => {
-            logout(); 
-            navigation.replace('Landing'); 
-          }}
+          onPress={() => logout()} 
         >
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
