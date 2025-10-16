@@ -92,6 +92,7 @@ model SupportMessage {
   sentBy    String   
   status    String   @default("unread") 
   createdAt DateTime @default(now())
+  read      Boolean  @default(false)
 
   agent Agent? @relation("AgentMessages", fields: [agentId], references: [id])
 }

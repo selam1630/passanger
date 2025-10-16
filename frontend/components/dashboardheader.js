@@ -30,8 +30,14 @@ export default function DashboardHeader({ user }) {
           onPress={() => navigation.navigate('Landing')}
         >
           <Text style={styles.actionText}>🏠 Home</Text>
+          
         </TouchableOpacity>
-
+<TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => navigation.navigate('CarrierProfile')}
+        >
+          <Text style={styles.actionText}>Profile</Text>
+        </TouchableOpacity>
         <TouchableOpacity
           style={[styles.actionButton, styles.logoutButton]}
           onPress={() => {

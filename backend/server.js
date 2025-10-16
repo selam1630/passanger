@@ -14,6 +14,8 @@ import receiverRoute from './routes/receiverRoute.js';
 import paymentRoute from './routes/paymentRoute.js';
 import supportRoute from './routes/supportRoutes.js';
 import pointsRoute from './routes/pointsRoute.js';
+import carrierProfileRoute from "./routes/carrierProfileRoute.js";
+
 dotenv.config();
 
 const app = express();
@@ -30,6 +32,8 @@ app.use('/api/payment', paymentRoute);
 app.use('/api', testRoute);
 app.use('/api/support', supportRoute);
 app.use('/api/points', pointsRoute);
+app.use("/api/carrier/profile", carrierProfileRoute);
+
 
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });

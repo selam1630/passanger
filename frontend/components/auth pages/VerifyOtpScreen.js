@@ -65,7 +65,7 @@ export default function VerifyOtpScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.card}>
-            <Text style={styles.logo}>FlyBridge</Text>
+            <Text style={styles.logo}>SwiftLink</Text>
             <Text style={styles.title}>OTP Verification</Text>
             <Text style={styles.subtitle}>
               Enter the 6-digit code sent to {phone || 'your phone number'}

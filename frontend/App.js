@@ -12,6 +12,7 @@ import SupportChat from './components/ChatScreen';
 import AgentDashboard from './components/agent/AgentChat';
 import { AuthProvider, AuthContext } from './components/context/AuthContext';
 import { ActivityIndicator, View } from 'react-native';
+import CarrierProfileScreen from './components/carrier/CarrierProfileScreen';
 
 const Stack = createNativeStackNavigator();
 function AppNavigator() {
@@ -30,8 +31,11 @@ function AppNavigator() {
       {user ? (
         <>
           {user.role === 'carrier' && (
-            <Stack.Screen name="CarrierDashboard" component={CarrierDashboard} />
-          )}
+  <>
+    <Stack.Screen name="CarrierDashboard" component={CarrierDashboard} />
+    <Stack.Screen name="CarrierProfile" component={CarrierProfileScreen} />
+  </>
+)}
           {user.role === 'sender' && (
             <Stack.Screen name="SenderDashboard" component={SenderDashboard} />
           )}

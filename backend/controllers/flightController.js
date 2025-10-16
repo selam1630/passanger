@@ -24,13 +24,12 @@ export const addFlight = async (req, res) => {
 export const getAllFlights = async (req, res) => {
   try {
     const flights = await prisma.flight.findMany({
-      include: {
-        carrier: {
-          select: { fullName: true, phone: true },
-        },
-      },
-    });
-
+  include: {
+    carrier: {
+      select: { fullName: true, phone: true, points: true },
+    },
+  },
+});
     res.json(flights);
   } catch (error) {
     console.error("Error fetching flights:", error);

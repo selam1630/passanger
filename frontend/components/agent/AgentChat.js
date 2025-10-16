@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import { 
   View, TextInput, TouchableOpacity, FlatList, Text,
   KeyboardAvoidingView, Platform, StyleSheet,
@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import socket from '../socket';
 import { LinearGradient } from 'expo-linear-gradient';
 import DashboardHeader from '../dashboardheader';
+import { AuthContext } from '../context/AuthContext';
 
 const COLORS = {
   BACKGROUND_LIGHT: '#F7F8FC',
@@ -21,38 +22,49 @@ const COLORS = {
   SHADOW: 'rgba(0,0,0,0.1)',
 };
 
-const ChatThreadLink = ({ user, onPress, selected }) => {
-  return (
-    <TouchableOpacity
-      style={[styles.userCard, selected && styles.selectedUserCard]}
-      onPress={onPress}
-    >
-      <Text style={styles.userName}>{user.userName || 'User'}</Text>
-      <Text style={styles.lastMessage} numberOfLines={1}>{user.lastMessage || 'New conversation'}</Text>
-      {user.unreadCount > 0 && (
-        <View style={styles.unreadBadge}>
-          <Text style={styles.unreadText}>{user.unreadCount}</Text>
-        </View>
-      )}
-    </TouchableOpacity>
-  );
-};
+const ChatThreadLink = ({ user, onPress, selected }) => (
+  <TouchableOpacity
+    style={[styles.userCard, selected && styles.selectedUserCard]}
+    onPress={onPress}
+  >
+    <Text style={styles.userName}>{user.userName || 'User'}</Text>
+    <Text style={styles.lastMessage} numberOfLines={1}>
+      {user.lastMessage || 'New conversation'}
+    </Text>
+    {user.unreadCount > 0 && (
+      <View style={styles.unreadBadge}>
+        <Text style={styles.unreadText}>{user.unreadCount}</Text>
+      </View>
+    )}
+  </TouchableOpacity>
+);
 
-const AgentChat = ({ route }) => {
-  const { agentId } = route.params;
+const AgentChat = () => {
+  const { user } = useContext(AuthContext);
+  const agentId = user?._id;
+
   const [usersList, setUsersList] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
 
   useEffect(() => {
+    if (!agentId) return;
+
     socket.connect();
     socket.emit('getUsersWithMessages', agentId);
 
     socket.on('usersList', (list) => setUsersList(list));
 
     socket.on('receiveMessage', (msg) => {
-      if (selectedUser && msg.userId === selectedUser.userId) {
+      setUsersList((prev) =>
+        prev.map((u) =>
+          u.userId === msg.userId
+            ? { ...u, lastMessage: msg.message, unreadCount: u.unreadCount + 1 }
+            : u
+        )
+      );
+      if (selectedUser?.userId === msg.userId) {
         setMessages((prev) => [...prev, msg]);
       }
     });
@@ -68,27 +80,40 @@ const AgentChat = ({ route }) => {
     setSelectedUser(user);
     setMessages([]);
     socket.emit('joinRoom', user.userId);
+
+const handleLoadMessages = (msgs) => {
+  const sorted = msgs.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+  setMessages(sorted);
+};
+socket.once('loadMessages', handleLoadMessages);
+
   };
 
   const sendMessage = () => {
     if (!input.trim() || !selectedUser) return;
+
     const data = {
       userId: selectedUser.userId,
       agentId,
       sentBy: 'agent',
       message: input.trim(),
     };
+
     socket.emit('sendMessage', data);
     setInput('');
   };
 
   const renderMessageItem = ({ item }) => {
     const isAgent = item.sentBy === 'agent';
-    const time = item.createdAt ? new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+    const time = item.createdAt
+      ? new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      : '';
     return (
       <View style={[styles.messageRow, isAgent ? styles.agentRow : styles.userRow]}>
         <View style={[styles.messageBubble, isAgent ? styles.agentBubble : styles.userBubble]}>
-          <Text style={isAgent ? styles.agentMessageText : styles.userMessageText}>{item.message}</Text>
+          <Text style={isAgent ? styles.agentMessageText : styles.userMessageText}>
+            {item.message}
+          </Text>
           <Text style={styles.timestamp}>{time}</Text>
         </View>
       </View>
@@ -98,8 +123,6 @@ const AgentChat = ({ route }) => {
   return (
     <LinearGradient colors={[COLORS.BACKGROUND_LIGHT, COLORS.BACKGROUND_LIGHT]} style={styles.container}>
       <SafeAreaView style={styles.mainWrapper}>
-        
-        {/* Sidebar for web */}
         {Platform.OS === 'web' && (
           <View style={styles.sidebar}>
             <Text style={styles.sidebarHeader}>Live Threads</Text>
@@ -116,12 +139,9 @@ const AgentChat = ({ route }) => {
           </View>
         )}
 
-        {/* Main Chat Area */}
         <View style={styles.chatArea}>
-          {/* Dashboard Header */}
           <DashboardHeader user={{ _id: agentId }} />
 
-          {/* Users horizontal scroll for mobile */}
           {Platform.OS !== 'web' && (
             <ScrollView horizontal style={styles.usersContainer}>
               {usersList.map((user) => (
@@ -135,7 +155,6 @@ const AgentChat = ({ route }) => {
             </ScrollView>
           )}
 
-          {/* Chat Messages */}
           {selectedUser ? (
             <KeyboardAvoidingView style={styles.flexOne} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
               <FlatList

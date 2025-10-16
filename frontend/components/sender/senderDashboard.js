@@ -164,6 +164,8 @@ export default function SenderDashboard({ route }) {
   const [acceptorNationalID, setAcceptorNationalID] = useState('');
   const [itemDescription, setItemDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [points, setPoints] = useState(0);
+
   const fetchFlights = useCallback(async () => {
     try {
       const res = await fetch('http://localhost:5000/api/sender/flights', {
@@ -291,7 +293,10 @@ export default function SenderDashboard({ route }) {
           <Text style={styles.flightRoute}>
             {item.from} → {item.to}
           </Text>
-          <Text style={styles.flightCarrier}>{item.carrier.fullName} ({item.carrier.points ?? 0} ⭐)</Text>
+          <Text style={styles.flightCarrier}>
+  {item.carrier.fullName} ({item.carrier.points ?? 0} ⭐)
+</Text>
+
         </View>
 
         <View style={styles.flightDetails}>
