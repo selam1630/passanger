@@ -19,10 +19,13 @@ model User {
   otpCode              String?   
   otpExpiry            DateTime? 
   createdAt            DateTime @default(now())
-   flights       Flight[]     @relation("UserFlights")      
+  flights       Flight[]     @relation("UserFlights")      
   sentShipments Shipment[]   @relation("SenderShipments")
   carriedShipments Shipment[] @relation("CarrierShipments") 
- balance              Float    @default(0) 
+  balance              Float    @default(0) 
+  nationalIDVerifiedAt  DateTime?  
+  nationalIDQRHash      String? 
+  points               Int      @default(0)  
 }
 model Flight {
   id            String   @id @default(auto()) @map("_id") @db.ObjectId

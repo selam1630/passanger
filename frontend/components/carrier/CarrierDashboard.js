@@ -47,7 +47,7 @@ export default function CarrierDashboard({ route }) {
   const [token, setToken] = useState('');
   const [activeMenu, setActiveMenu] = useState('REPORTS'); 
   const [shipments, setShipments] = useState([]);
-
+  const [points, setPoints] = useState(0);
 
  useEffect(() => {
   if (route.params?.token) {
@@ -59,9 +59,11 @@ export default function CarrierDashboard({ route }) {
 useEffect(() => {
   if (token) {
     fetchShipments();
+    fetchUserPoints(); 
+    const interval = setInterval(fetchShipments, 30000);
+    return () => clearInterval(interval);
   }
 }, [token]);
-
   const fetchFlights = async () => {
     try {
       const res = await fetch('http://localhost:5000/api/flights/get');
@@ -71,7 +73,6 @@ useEffect(() => {
       console.error('Error fetching flights:', err);
     }
   };
-
 
   const fetchShipments = async () => {
   try {
@@ -88,6 +89,19 @@ useEffect(() => {
     }
   } catch (err) {
     console.error('Error fetching shipments:', err);
+  }
+};
+const fetchUserPoints = async () => {
+  try {
+    const res = await fetch("http://localhost:5000/api/points/me", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const data = await res.json();
+    setPoints(data.points || 0);
+  } catch (err) {
+    console.error("Error fetching user points:", err);
   }
 };
 
@@ -196,7 +210,8 @@ useEffect(() => {
            <Text style={{ color: "white", fontWeight: "bold" }}>HELP</Text>
          </TouchableOpacity>
           <SidebarLink text="SETTINGS" isActive={activeMenu === 'SETTINGS'} onPress={() => setActiveMenu('SETTINGS')} />
-          
+          <Text style={styles.profilePoints}>🏆 Points: {points}</Text>
+
           <View style={{ flex: 1 }} />
           <View style={styles.activeUsersContainer}>
             <Text style={styles.activeUsersTitle}>ACTIVE USERS</Text>
@@ -324,6 +339,12 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#FFB733', 
   },
+  profilePoints: {
+  color: '#FFD700', 
+  fontSize: 12,
+  marginTop: 5,
+  fontWeight: 'bold',
+},
   profileName: {
     color: '#fff',
     fontSize: 14,

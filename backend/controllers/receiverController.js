@@ -3,7 +3,6 @@ import prisma from "../config/db.js";
 export const trackShipment = async (req, res) => {
   try {
     const { trackingCode } = req.params;
-
     const shipment = await prisma.shipment.findFirst({
       where: { trackingCode },
       include: {
@@ -35,7 +34,7 @@ export const confirmDelivery = async (req, res) => {
 
     const shipment = await prisma.shipment.findUnique({
       where: { trackingCode },
-      include: { carrier: true },
+      include: { carrier: true, sender: true },
     });
 
     if (!shipment) {
@@ -46,37 +45,61 @@ export const confirmDelivery = async (req, res) => {
       return res.status(400).json({ message: "Shipment already confirmed" });
     }
     const updatedShipment = await prisma.shipment.update({
-  where: { id: shipment.id },
-  data: { status: "DELIVERED" },
+      where: { id: shipment.id },
+      data: { status: "DELIVERED" },
+    });
+    const platformFeeRate = 0.1;
+    const shipmentFee = shipment.fee ?? 0;
+    const platformFee = shipmentFee * platformFeeRate;
+    const amountToRelease = shipmentFee - platformFee;
+
+    if (amountToRelease > 0 && shipment.carrierId) {
+      await prisma.user.update({
+        where: { id: shipment.carrierId },
+        data: { balance: { increment: amountToRelease } },
+      });
+    }
+    const reference = `SHIP-${shipment.trackingCode}-${Date.now()}`;
+    await prisma.payment.create({
+      data: {
+        shipmentId: shipment.id,
+        reference,
+        amount: shipmentFee,
+        platformFee,
+        status: "released",
+        releasedAt: new Date(),
+      },
+    });
+  if (shipment.carrierId) {
+  console.log("Adding points to carrier:", shipment.carrierId);
+  const carrierBefore = await prisma.user.findUnique({
+    where: { id: shipment.carrierId },
+    select: { points: true },
+  });
+  console.log("Carrier points before:", carrierBefore?.points);
+const carrier = await prisma.user.findUnique({
+  where: { id: shipment.carrierId },
+  select: { points: true },
 });
 
-const platformFeeRate = 0.1;
-const shipmentFee = shipment.fee ?? 0;
-const platformFee = shipmentFee * platformFeeRate;
-const amountToRelease = shipmentFee - platformFee;
+const newPoints = (carrier?.points || 0) + 5;
+const updatedCarrier = await prisma.user.update({
+  where: { id: shipment.carrierId },
+  data: { points: newPoints },
+});
 
-if (amountToRelease > 0 && shipment.carrierId) {
-  await prisma.user.update({
+console.log("Carrier new points:", updatedCarrier.points);
+
+  const carrierAfter = await prisma.user.findUnique({
     where: { id: shipment.carrierId },
-    data: { balance: { increment: amountToRelease } },
+    select: { points: true },
   });
+  console.log("Carrier new points:", carrierAfter?.points);
 }
 
-const reference = `SHIP-${shipment.trackingCode}-${Date.now()}`;
-
-await prisma.payment.create({
-  data: {
-    shipmentId: shipment.id,
-    reference,
-    amount: shipmentFee,
-    platformFee,
-    status: "released",
-    releasedAt: new Date(),
-  },
-});
 
     res.status(200).json({
-      message: "Delivery confirmed. Payment released to carrier minus platform fee.",
+      message: "Delivery confirmed. Payment released and carrier points awarded!",
       shipment: updatedShipment,
       amountReleased: amountToRelease,
       platformFee,

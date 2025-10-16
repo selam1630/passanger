@@ -13,7 +13,7 @@ import senderRoute from './routes/senderRoute.js';
 import receiverRoute from './routes/receiverRoute.js';
 import paymentRoute from './routes/paymentRoute.js';
 import supportRoute from './routes/supportRoutes.js';
-
+import pointsRoute from './routes/pointsRoute.js';
 dotenv.config();
 
 const app = express();
@@ -29,6 +29,7 @@ app.use('/api/receiver', receiverRoute);
 app.use('/api/payment', paymentRoute);
 app.use('/api', testRoute);
 app.use('/api/support', supportRoute);
+app.use('/api/points', pointsRoute);
 
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });

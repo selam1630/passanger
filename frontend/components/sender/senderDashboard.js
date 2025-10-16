@@ -290,7 +290,7 @@ export default function SenderDashboard({ route }) {
           <Text style={styles.flightRoute}>
             {item.from} → {item.to}
           </Text>
-          <Text style={styles.flightCarrier}>{item.carrier.fullName}</Text>
+          <Text style={styles.flightCarrier}>{item.carrier.fullName} ({item.carrier.points ?? 0} ⭐)</Text>
         </View>
 
         <View style={styles.flightDetails}>
