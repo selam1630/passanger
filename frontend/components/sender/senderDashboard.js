@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback,useContext } from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,7 @@ import { useNavigation } from '@react-navigation/native';
 import Slider from '@react-native-community/slider';
 import * as WebBrowser from 'expo-web-browser';
 import DashboardHeader from '../dashboardheader';
+import { AuthContext } from '../context/AuthContext';
 const COLORS = {
   BACKGROUND_LIGHT: '#F7F8FC',
   BACKGROUND_DARK: '#2D4B46',
@@ -151,7 +152,7 @@ const MemoizedShipmentModal = React.memo(({
 });
 export default function SenderDashboard({ route }) {
   const navigation = useNavigation();
-  const [token] = useState(route.params?.token || 'mock_sender_token');
+  const { user, token } = useContext(AuthContext);
   const [activeMenu, setActiveMenu] = useState('SHIPMENTS');
   const [flights, setFlights] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -318,8 +319,8 @@ export default function SenderDashboard({ route }) {
         <View style={styles.sidebar}>
           <View style={styles.profileContainer}>
             <View style={styles.profileImagePlaceholder} />
-            <Text style={styles.profileName}>SENDER NAME</Text>
-            <Text style={styles.profileEmail}>sender.email@example.com</Text>
+             <Text style={styles.profileName}>{user?.fullName || 'Sender'}</Text>
+            <Text style={styles.profileEmail}>{user?.email || '---'}</Text>
           </View>
           <SidebarLink text="DASHBOARD" isActive={activeMenu === 'DASHBOARD'} onPress={() => setActiveMenu('DASHBOARD')} />
            <TouchableOpacity

@@ -83,7 +83,7 @@ export default function SignUpScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.card}>
-            <Text style={styles.logo}>FlyBridge</Text>
+            <Text style={styles.logo}>SwiftLink</Text>
             <Text style={styles.title}>Create Account</Text>
             <Text style={styles.subtitle}>Join the FlyBridge network</Text>
 

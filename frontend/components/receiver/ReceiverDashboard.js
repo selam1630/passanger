@@ -1,4 +1,4 @@
-import React, { useState, useCallback,useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useContext } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DashboardHeader from '../dashboardheader';
+import { AuthContext } from '../context/AuthContext';
 
 const COLORS = {
   BACKGROUND_LIGHT: '#F7F8FC',
@@ -104,29 +105,14 @@ const ConfirmDeliveryModal = ({ isVisible, onClose, onConfirm, shipment }) => {
 };
 export default function ReceiverDashboard() {
   const navigation = useNavigation();
+  const { user, token } = useContext(AuthContext);
+
   const [activeMenu, setActiveMenu] = useState('TRACK');
   const [trackingCode, setTrackingCode] = useState('');
   const [shipmentDetails, setShipmentDetails] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isConfirmModalVisible, setIsConfirmModalVisible] = useState(false);
   const [shipmentToConfirm, setShipmentToConfirm] = useState(null);
-  const [user, setUser] = useState(null);
-  const [isUserLoading, setIsUserLoading] = useState(true);
-
-useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const storedUser = await AsyncStorage.getItem('user');
-        if (storedUser) setUser(JSON.parse(storedUser));
-      } catch (err) {
-        console.log('Error loading user:', err);
-      } finally {
-        setIsUserLoading(false); 
-      }
-    };
-    fetchUser();
-  }, []);
-
   const handleTrackShipment = useCallback(async () => {
     if (!trackingCode.trim()) {
       return Alert.alert('Missing Code', 'Please enter a tracking code.');
@@ -310,8 +296,8 @@ useEffect(() => {
           {Platform.OS === 'web' ? (
             <View style={styles.profileContainer}>
               <View style={styles.profileImagePlaceholder} />
-              <Text style={styles.profileName}>SHIPMENT RECEIVER</Text>
-              <Text style={styles.profileEmail}>fi@gmail.com</Text>
+              <Text style={styles.profileName}>{user?.fullName || 'Receiver'}</Text>
+<Text style={styles.profileEmail}>{user?.email || '---'}</Text>
             </View>
           ) : null}
           <SidebarLink text="TRACK DELIVERY" isActive={activeMenu === 'TRACK'} onPress={() => setActiveMenu('TRACK')} />
@@ -320,7 +306,7 @@ useEffect(() => {
 
   style={{
     backgroundColor: "",
-    padding: 12,
+    padding: 0,
     borderRadius: 8,
     alignItems: "center",
     marginTop: 10,

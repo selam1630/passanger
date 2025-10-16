@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect,useContext } from 'react';
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import { useNavigation } from '@react-navigation/native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Slider from '@react-native-community/slider';
 import DashboardHeader from '../dashboardheader';
+import { AuthContext } from '../context/AuthContext';
 const SidebarLink = ({ text, isActive, onPress }) => (
   <TouchableOpacity
     style={[
@@ -38,16 +39,18 @@ const summaryCardWidth = (screenWidth - 150 - contentPadding * 2 - cardSpacing *
 
 export default function CarrierDashboard({ route }) {
   const navigation = useNavigation();
+  const { user, token } = useContext(AuthContext);
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [departureDate, setDepartureDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [availableKg, setAvailableKg] = useState(5);
   const [flights, setFlights] = useState([]);
-  const [token, setToken] = useState('');
   const [activeMenu, setActiveMenu] = useState('REPORTS'); 
   const [shipments, setShipments] = useState([]);
   const [points, setPoints] = useState(0);
+  const [userInfo, setUserInfo] = useState({ fullName: '', email: '' });
+
 
  useEffect(() => {
   if (route.params?.token) {
@@ -193,8 +196,8 @@ const fetchUserPoints = async () => {
           <View style={styles.profileContainer}>
             <View style={styles.profileImagePlaceholder}>
             </View>
-            <Text style={styles.profileName}>ALEX JOHNSON</Text>
-            <Text style={styles.profileEmail}>alex.johnson@gmail.com</Text>
+            <Text style={styles.profileName}>{user?.fullName || 'Carrier'}</Text>
+           <Text style={styles.profileEmail}>{user?.email || '---'}</Text>
           </View>
           <SidebarLink text="DASHBOARD" isActive={activeMenu === 'DASHBOARD'} onPress={() => setActiveMenu('DASHBOARD')} />
          <TouchableOpacity

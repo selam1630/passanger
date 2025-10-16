@@ -1,17 +1,17 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { View, Text, TouchableOpacity, Image, StyleSheet, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { AuthContext } from './context/AuthContext';
 
 const logoImage = require('../assets/logo.png'); 
-
 const COLORS = {
   BACKGROUND_DARK: '#FFFFFF',
   ACCENT_GOLD: '#FFB733',
   TEXT_LIGHT: '#2D4B46',
 };
-
 export default function DashboardHeader({ user }) {
   const navigation = useNavigation();
+  const { logout } = useContext(AuthContext);
 
   return (
     <View style={styles.header}>
@@ -34,7 +34,10 @@ export default function DashboardHeader({ user }) {
 
         <TouchableOpacity
           style={[styles.actionButton, styles.logoutButton]}
-          onPress={() => navigation.navigate('SignIn')}
+          onPress={() => {
+            logout(); 
+            navigation.replace('Landing'); 
+          }}
         >
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
@@ -51,7 +54,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     paddingHorizontal: Platform.OS === 'web' ? 40 : 20,
-    
   },
   leftSection: {
     flexDirection: 'row',

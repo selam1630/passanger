@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import Header from '../Header';
+import { AuthContext } from '../context/AuthContext';
 
 const COLORS = {
   BACKGROUND_LIGHT: '#F7F8FC',
@@ -28,51 +29,19 @@ const COLORS = {
 
 export default function SignInScreen() {
   const navigation = useNavigation();
+  const { login } = useContext(AuthContext); 
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [message, setMessage] = useState('');
   const [role, setRole] = useState('sender'); 
+  const [message, setMessage] = useState('');
 
-  const handleSignIn = async () => {
-    try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, role }),
-      });
-      const data = await response.json();
-
-      if (response.ok) {
-        setMessage('Login successful!');
-        const token = data.token;
-
-        const userRes = await fetch('http://localhost:5000/api/auth/me', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        const userData = await userRes.json();
-        if (userData.role === 'carrier') {
-  navigation.navigate('CarrierDashboard', { token, user: userData });
-} else if (userData.role === 'sender') {
-  navigation.navigate('senderDashboard', { token, user: userData });
-} else if (userData.role === 'receiver') {
-  navigation.navigate('ReceiverDashboard', { token, user: userData });
-} else if (userData.role === 'agent') {
-  navigation.navigate('AgentDashboard', { token, user: userData }); // <-- pass full user object
-} else {
-  Alert.alert('Error', 'Unknown role. Cannot navigate.');
-}
-      } else {
-        setMessage(data.message || 'Login failed');
-      }
-    } catch (error) {
-      console.error('Error logging in:', error);
-      setMessage('An error occurred. Please try again.');
+  const handleSignIn = () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Please fill all fields');
+      return;
     }
+    login(email, password, role, navigation); 
   };
 
   return (
@@ -85,11 +54,9 @@ export default function SignInScreen() {
       >
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <View style={styles.card}>
-            <Text style={styles.logo}>FlyBridge</Text>
+            <Text style={styles.logo}>SwiftLink</Text>
             <Text style={styles.title}>Welcome Back</Text>
             <Text style={styles.subtitle}>Sign in to continue your journey</Text>
-
-            {/* Role Selector */}
             <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 20 }}>
               {['user', 'agent'].map(r => (
                 <TouchableOpacity
