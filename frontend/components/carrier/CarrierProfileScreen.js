@@ -64,26 +64,30 @@ export default function CarrierProfileScreen() {
 
 
   const fetchProfile = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch('http://localhost:5000/api/carrier/profile', {
-        headers: { Authorization: `Bearer ${token}` },
+  try {
+    setLoading(true);
+    const res = await fetch('http://localhost:5000/api/carrier/profile', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (res.ok) {
+      setProfile({
+        fullName: data.carrier.fullName,
+        phone: data.carrier.phone,
+        email: data.carrier.email,
+        points: data.carrier.points,
       });
-      const data = await res.json();
-      if (res.ok) {
-        setProfile(data.carrier);
-        setFlights(data.carrierFlights || []);
-      } else {
-        Alert.alert('Error', data.message || 'Failed to fetch profile');
-      }
-    } catch (err) {
-      console.error(err);
-      Alert.alert('Error', 'Network error while fetching profile');
-    } finally {
-      setLoading(false);
+      setFlights(data.carrier.flights || []); // ✅ Corrected
+    } else {
+      Alert.alert('Error', data.message || 'Failed to fetch profile');
     }
-  };
-
+  } catch (err) {
+    console.error(err);
+    Alert.alert('Error', 'Network error while fetching profile');
+  } finally {
+    setLoading(false);
+  }
+};
   useEffect(() => {
     if (token) fetchProfile();
   }, [token]);

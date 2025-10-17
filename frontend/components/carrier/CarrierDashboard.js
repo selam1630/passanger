@@ -50,6 +50,8 @@ export default function CarrierDashboard({ route }) {
   const [shipments, setShipments] = useState([]);
   const [points, setPoints] = useState(0);
   const [userInfo, setUserInfo] = useState({ fullName: '', email: '' });
+  const [selectedFlight, setSelectedFlight] = useState(null);
+const [datePickerVisible, setDatePickerVisible] = useState(false);
 
 
  useEffect(() => {
