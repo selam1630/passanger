@@ -60,34 +60,36 @@ export default function CarrierProfileScreen() {
   const [datePickerVisible, setDatePickerVisible] = useState(false);
   const [selectedFlight, setSelectedFlight] = useState(null);
   const [newDepartureDate, setNewDepartureDate] = useState(new Date());
-  const [activeMenu, setActiveMenu] = useState('SETTINGS'); 
+  const [activeMenu, setActiveMenu] = useState('SETTINGS');
 
+  const BASE_URL = 'http://192.168.0.121:5000'
 
   const fetchProfile = async () => {
-  try {
-    setLoading(true);
-    const res = await fetch('http://localhost:5000/api/carrier/profile', {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const data = await res.json();
-    if (res.ok) {
-      setProfile({
-        fullName: data.carrier.fullName,
-        phone: data.carrier.phone,
-        email: data.carrier.email,
-        points: data.carrier.points,
+    try {
+      setLoading(true);
+      const res = await fetch(`${BASE_URL}/api/carrier/profile`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-      setFlights(data.carrier.flights || []); // ✅ Corrected
-    } else {
-      Alert.alert('Error', data.message || 'Failed to fetch profile');
+      const data = await res.json();
+      if (res.ok) {
+        setProfile({
+          fullName: data.carrier.fullName,
+          phone: data.carrier.phone,
+          email: data.carrier.email,
+          points: data.carrier.points,
+        });
+        setFlights(data.carrier.flights || []);
+      } else {
+        Alert.alert('Error', data.message || 'Failed to fetch profile');
+      }
+    } catch (err) {
+      console.error(err);
+      Alert.alert('Error', 'Network error while fetching profile');
+    } finally {
+      setLoading(false);
     }
-  } catch (err) {
-    console.error(err);
-    Alert.alert('Error', 'Network error while fetching profile');
-  } finally {
-    setLoading(false);
-  }
-};
+  };
+
   useEffect(() => {
     if (token) fetchProfile();
   }, [token]);
@@ -95,7 +97,7 @@ export default function CarrierProfileScreen() {
   const handleUpdateProfile = async () => {
     try {
       setUpdatingProfile(true);
-      const res = await fetch('http://localhost:5000/api/carrier/profile', {
+      const res = await fetch(`${BASE_URL}/api/carrier/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -106,7 +108,7 @@ export default function CarrierProfileScreen() {
       const data = await res.json();
       if (res.ok) {
         setProfile(data.carrier);
-        Alert.alert('Success', 'Profile updated');
+        Alert.alert('✅ Success', 'Profile updated successfully');
       } else {
         Alert.alert('Error', data.message || 'Failed to update profile');
       }
@@ -120,19 +122,19 @@ export default function CarrierProfileScreen() {
 
   const handleDeleteFlight = async (flightId) => {
     Alert.alert('Confirm Delete', 'Are you sure you want to delete this flight?', [
-      { text: 'Cancel' },
+      { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
         onPress: async () => {
           try {
-            const res = await fetch(`http://localhost:5000/api/carrier/profile/flight/${flightId}`, {
+            const res = await fetch(`${BASE_URL}/api/carrier/profile/flight/${flightId}`, {
               method: 'DELETE',
               headers: { Authorization: `Bearer ${token}` },
             });
             const data = await res.json();
             if (res.ok) {
               setFlights(flights.filter(f => f.id !== flightId));
-              Alert.alert('Deleted', 'Flight removed');
+              Alert.alert('🗑️ Deleted', 'Flight removed successfully');
             } else {
               Alert.alert('Error', data.message || 'Failed to delete flight');
             }
@@ -149,23 +151,20 @@ export default function CarrierProfileScreen() {
   const handleUpdateFlightDate = async () => {
     if (!selectedFlight) return;
     try {
-      const res = await fetch(
-        `http://localhost:5000/api/carrier/profile/flight/${selectedFlight.id}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ departureDate: newDepartureDate.toISOString() }),
-        }
-      );
+      const res = await fetch(`${BASE_URL}/api/carrier/profile/flight/${selectedFlight.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ departureDate: newDepartureDate.toISOString() }),
+      });
       const data = await res.json();
       if (res.ok) {
         setFlights(flights.map(f => (f.id === selectedFlight.id ? data.updatedFlight : f)));
         setDatePickerVisible(false);
         setSelectedFlight(null);
-        Alert.alert('Success', 'Flight updated');
+        Alert.alert('✅ Success', 'Flight updated successfully');
       } else {
         Alert.alert('Error', data.message || 'Failed to update flight');
       }
@@ -220,15 +219,22 @@ export default function CarrierProfileScreen() {
         value={profile.phone}
         onChangeText={text => setProfile({ ...profile, phone: text })}
       />
-      <Text style={styles.profileInfoText}>Email: **{profile.email}**</Text>
-      <Text style={styles.profileInfoText}>Points: **{profile.points}** 🏆</Text>
+      <Text style={styles.profileInfoText}>Email: {profile.email}</Text>
+      <Text style={styles.profileInfoText}>Points: {profile.points} ⭐</Text>
       <TouchableOpacity style={styles.updateBtn} onPress={handleUpdateProfile} disabled={updatingProfile}>
         <Text style={styles.updateBtnText}>{updatingProfile ? 'Updating...' : 'Update Profile'}</Text>
       </TouchableOpacity>
     </View>
   );
 
-  if (loading) return <ActivityIndicator size="large" style={{ flex: 1, backgroundColor: COLORS.BACKGROUND_LIGHT }} color={COLORS.ACCENT_GOLD} />;
+  if (loading)
+    return (
+      <ActivityIndicator
+        size="large"
+        style={{ flex: 1, backgroundColor: COLORS.BACKGROUND_LIGHT }}
+        color={COLORS.ACCENT_GOLD}
+      />
+    );
 
   return (
     <LinearGradient colors={[COLORS.BACKGROUND_LIGHT, COLORS.BACKGROUND_LIGHT]} style={styles.container}>
@@ -250,7 +256,6 @@ export default function CarrierProfileScreen() {
           </TouchableOpacity>
           <SidebarLink text="SETTINGS" isActive={activeMenu === 'SETTINGS'} onPress={() => setActiveMenu('SETTINGS')} />
           <Text style={styles.sidebarPoints}>🏆 Points: {profile.points}</Text>
-
           <View style={{ flex: 1 }} />
           <View style={styles.activeUsersContainer}>
             <Text style={styles.activeUsersTitle}>ACTIVE USERS</Text>
@@ -287,7 +292,7 @@ export default function CarrierProfileScreen() {
                 setDatePickerVisible(false);
                 if (date) {
                   setNewDepartureDate(date);
-                  handleUpdateFlightDate(date); 
+                  handleUpdateFlightDate();
                 }
               }}
             />

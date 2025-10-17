@@ -29,26 +29,36 @@ export default function VerifyOtpScreen() {
   const navigation = useNavigation();
   const { phone } = route.params || {};
   const [otp, setOtp] = useState('');
-  
+  const [loading, setLoading] = useState(false);
+
   const handleVerifyOtp = async () => {
-    try {
-      const response = await fetch('http://localhost:5000/api/otp/verify-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, otp }),
-      });
-      const data = await response.json();
-      if (response.ok) {
-        Alert.alert('Success', data.message || 'OTP verified successfully');
-        navigation.navigate('SignIn');
-      } else {
-        Alert.alert('Error', data.message || 'OTP verification failed');
-      }
-    } catch (error) {
-      console.error('OTP verification error:', error);
-      Alert.alert('Error', 'Something went wrong. Please try again.');
+  if (!otp) {
+    Alert.alert('Error', 'Please enter the OTP');
+    return;
+  }
+
+  setLoading(true);
+  try {
+    const response = await fetch('http://192.168.0.121:5000/api/otp/verify-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, otp }),
+    });
+    const data = await response.json();
+
+    if (response.ok) {
+      Alert.alert('Success', data.message || 'OTP verified successfully');
+      navigation.navigate('SignIn');
+    } else {
+      Alert.alert('Error', data.message || 'OTP verification failed');
     }
-  };
+  } catch (error) {
+    console.error('OTP verification error:', error);
+    Alert.alert('Error', 'Something went wrong. Please try again.');
+  } finally {
+    setLoading(false); 
+  }
+};
 
   return (
     <LinearGradient 
@@ -80,10 +90,13 @@ export default function VerifyOtpScreen() {
               value={otp}
               onChangeText={setOtp}
             />
-
-            <TouchableOpacity style={styles.verifyBtn} onPress={handleVerifyOtp}>
-              <Text style={styles.verifyText}>Verify</Text>
-            </TouchableOpacity>
+<TouchableOpacity
+  style={[styles.verifyBtn, loading && { opacity: 0.6 }]}
+  onPress={handleVerifyOtp}
+  disabled={loading} 
+>
+  <Text style={styles.verifyText}>{loading ? 'Verifying...' : 'Verify'}</Text>
+</TouchableOpacity>
 
             <View style={styles.footer}>
               <Text style={styles.footerText}>Didn’t receive the code?</Text>

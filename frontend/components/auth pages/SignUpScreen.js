@@ -32,43 +32,37 @@ export default function SignUpScreen() {
   const [phone, setPhone] = useState('');
   const [nationalID, setNationalID] = useState('');
   const [role, setRole] = useState('');
+  const [loading, setLoading] = useState(false);
+const handleSignUp = async () => {
+  if (!fullName || !email || !password || !phone || !nationalID || !role) {
+    Alert.alert('Missing Information', 'Please fill in all fields before signing up.');
+    return;
+  }
 
-  const handleSignUp = async () => {
-    if (!fullName || !email || !password || !phone || !nationalID || !role) {
-      Alert.alert('Missing Information', 'Please fill in all fields before signing up.');
-      return;
+  setLoading(true);
+  try {
+    const response = await fetch('http://localhost:5000/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fullName, email, password, phone, nationalID, role }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      console.log('Registration successful:', data);
+      navigation.navigate('VerifyOtp', { phone });
+    } else {
+      console.error('Registration failed:', data.message || data);
+      Alert.alert('Error', data.message || 'Registration failed');
     }
-
-    try {
-      const response = await fetch('http://localhost:5000/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          fullName,
-          email,
-          password,
-          phone,
-          nationalID,
-          role,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        console.log('Registration successful:', data);
-        navigation.navigate('VerifyOtp', { phone });
-      } else {
-        console.error('Registration failed:', data.message || data);
-        Alert.alert('Error', data.message || 'Registration failed');
-      }
-    } catch (error) {
-      console.error('Error registering:', error);
-      Alert.alert('Error', 'An error occurred. Please try again.');
-    }
-  };
+  } catch (error) {
+    console.error('Error registering:', error);
+    Alert.alert('Error', 'An error occurred. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <LinearGradient colors={[COLORS.BACKGROUND_LIGHT, COLORS.BACKGROUND_LIGHT]} style={styles.container}>
@@ -85,7 +79,7 @@ export default function SignUpScreen() {
           <View style={styles.card}>
             <Text style={styles.logo}>SwiftLink</Text>
             <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>Join the FlyBridge network</Text>
+            <Text style={styles.subtitle}>Join the SwiftLink network</Text>
 
             <TextInput
               style={styles.input}
@@ -138,9 +132,15 @@ export default function SignUpScreen() {
                 <Picker.Item label="Receiver" value="receiver" color={COLORS.TEXT_DARK} />
               </Picker>
             </View>
-            <TouchableOpacity style={styles.signUpBtn} onPress={handleSignUp}>
-              <Text style={styles.signUpText}>Sign Up</Text>
-            </TouchableOpacity>
+<TouchableOpacity
+  style={[styles.signUpBtn, loading && { opacity: 0.6 }]}
+  onPress={handleSignUp}
+  disabled={loading} 
+>
+  <Text style={styles.signUpText}>
+    {loading ? 'Signing Up...' : 'Sign Up'}
+  </Text>
+</TouchableOpacity>
 
             <View style={styles.footer}>
               <Text style={styles.footerText}>Already have an account?</Text>

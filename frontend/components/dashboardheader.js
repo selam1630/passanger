@@ -29,7 +29,7 @@ export default function DashboardHeader({ user }) {
           style={styles.actionButton}
           onPress={() => navigation.navigate('Landing')}
         >
-          <Text style={styles.actionText}>🏠 Home</Text>
+          <Text style={styles.actionText}> Home</Text>
           
         </TouchableOpacity>
 <TouchableOpacity

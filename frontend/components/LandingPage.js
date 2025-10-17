@@ -39,31 +39,31 @@ const VideoCard = ({ player }) => (
   </View>
 );
 
-const ServiceItem = ({ title, description, index }) => {
-  const isOdd = index % 2 !== 0;
-  const iconText = index === 0 ? '✈️' : index === 1 ? '📦' : index === 2 ? 'GPS' : 'B2B';
-
+const ServiceItem = ({ title, description, details, features, index }) => {
+  const iconText = index === 0 ? 'send' : index === 1 ? 'pack' : index === 2 ? 'GPs' : 'B2B';
   return (
-    <View style={[
-      styles.serviceCard,
-      isWeb && { width: width > 768 ? '48%' : '100%' },
-    ]}>
+    <View style={[styles.serviceCard, isWeb && { width: width > 768 ? '48%' : '100%' }]}>
       <View style={styles.serviceIconContainer}>
         <Text style={styles.serviceIcon}>{iconText}</Text>
       </View>
       <Text style={styles.serviceTitle}>{title}</Text>
       <Text style={styles.serviceDescription}>{description}</Text>
+      <Text style={[styles.serviceDescription, { marginTop: 10, fontStyle: 'italic' }]}>{details}</Text>
+      {features && features.map((feat, i) => (
+        <Text key={i} style={[styles.serviceDescription, { marginTop: 5, paddingLeft: 10 }]}>• {feat}</Text>
+      ))}
     </View>
   );
 };
+
 const FeatureItem = ({ title, description }) => (
-    <View style={styles.featureItem}>
-        <View style={styles.featureBullet} />
-        <View style={styles.featureTextContainer}>
-            <Text style={styles.featureTitle}>{title}</Text>
-            <Text style={styles.featureDescription}>{description}</Text>
-        </View>
+  <View style={styles.featureItem}>
+    <View style={styles.featureBullet} />
+    <View style={styles.featureTextContainer}>
+      <Text style={styles.featureTitle}>{title}</Text>
+      <Text style={styles.featureDescription}>{description}</Text>
     </View>
+  </View>
 );
 
 export default function LandingPage() {
@@ -84,10 +84,28 @@ export default function LandingPage() {
   }, [player]);
 
   const services = [
-    { title: 'Courier Delivery', description: 'Fast, secure delivery for small packages across cities and towns.' },
-    { title: 'Freight & Cargo', description: 'Reliable freight service for large shipments, with real-time tracking.' },
-    { title: 'Package Tracking', description: 'Track your parcels anytime with live updates from sender to receiver.' },
-    { title: 'Business Solutions', description: 'Custom logistics solutions for companies, from bulk shipping to supply chain management.' },
+    { 
+      title: 'Courier Delivery', 
+      description: 'Fast, secure delivery for small packages across cities and towns.',
+      details: 'SwiftLink ensures your parcels reach their destination quickly and safely. Perfect for documents, small parcels, and urgent shipments, with real-time tracking and full insurance coverage.',
+    },
+    { 
+      title: 'Freight & Cargo', 
+      description: 'Reliable freight service for large shipments, with real-time tracking.',
+      details: 'Transport large shipments effortlessly with SwiftLink’s freight and cargo solutions. Our fleet of trucks and cargo carriers ensures safe handling, timely delivery, and flexible scheduling.',
+
+    },
+    { 
+      title: 'Package Tracking', 
+      description: 'Track your parcels anytime with live updates from sender to receiver.',
+      details: 'Stay informed at every step. Our tracking system provides real-time updates on the exact location of your shipment, with notifications via SMS and email until delivery is complete.',
+    },
+    { 
+      title: 'Business Solutions', 
+      description: 'Custom logistics solutions for companies, from bulk shipping to supply chain management.',
+      details: 'SwiftLink helps businesses optimize logistics with scalable solutions. We provide tailored shipping plans, supply chain management, and bulk shipment handling to ensure your operations run smoothly.',
+     
+    },
   ];
 
   const coreValues = [
@@ -134,12 +152,14 @@ export default function LandingPage() {
             </TouchableOpacity>
           </View>
         </View>
+
         <View style={styles.heroSection}>
           <View style={styles.heroLeft}>
-            <Text style={styles.heroTitle}>Deliver Smarter. Connect Faster.</Text>
+            <Text style={styles.heroTitle}>Deliver Smarter Connect Faster</Text>
             <Text style={styles.heroSubtitle}>
-              SwiftLink bridges senders and carriers seamlessly — helping businesses
-              and individuals move packages quickly, securely, and affordably across Ethiopia and beyond.
+              SwiftLink bridges senders and carriers seamlessly, creating a reliable connection that empowers both businesses and individuals. 
+              Our platform ensures packages are moved quickly, securely, and affordably, with real-time tracking and full insurance coverage. 
+              Whether sending a small parcel across town or managing large shipments across Ethiopia and beyond, SwiftLink makes logistics simple, transparent, and stress-free.
             </Text>
             <TouchableOpacity style={styles.quoteBtn} onPress={() => scrollToSection(servicesRef)}>
               <Text style={styles.quoteText}>Explore Services →</Text>
@@ -150,6 +170,7 @@ export default function LandingPage() {
             <VideoCard player={player} />
           </View>
         </View>
+
         <View ref={servicesRef} style={styles.servicesSection}>
           <Text style={styles.sectionTitle}>Our Services</Text>
           <View style={styles.servicesGrid}>
@@ -158,26 +179,27 @@ export default function LandingPage() {
             ))}
           </View>
         </View>
-<View ref={aboutRef} style={styles.aboutSection}>
-  <Text style={[styles.sectionTitle, { color: COLORS.TEXT_LIGHT }]}>Why SwiftLink?</Text>
-  
-  <View style={styles.aboutContent}>
-    <View style={styles.aboutMission}>
-      <Text style={styles.aboutMissionTitle}>Logistics, Simplified</Text>
-      <Text style={[styles.aboutText, { color: 'rgba(255,255,255,0.85)', marginBottom: 20 }]}>
-        SwiftLink makes shipping fast, reliable, and affordable. We connect senders and carriers seamlessly across Ethiopia.
-      </Text>
-      <TouchableOpacity style={styles.aboutCtaBtn} onPress={() => navigation.navigate('Contact')}>
-        <Text style={styles.aboutCtaText}>Connect With Us</Text>
-      </TouchableOpacity>
-    </View>
-    <View style={styles.aboutFeatures}>
-      {coreValues.slice(0, 2).map((feature, index) => (
-        <FeatureItem key={index} {...feature} />
-      ))}
-    </View>
-  </View>
-</View>
+
+        <View ref={aboutRef} style={styles.aboutSection}>
+          <Text style={[styles.sectionTitle, { color: COLORS.TEXT_LIGHT }]}>Why SwiftLink?</Text>
+          <View style={styles.aboutContent}>
+            <View style={styles.aboutMission}>
+              <Text style={styles.aboutMissionTitle}>Logistics, Simplified</Text>
+              <Text style={[styles.aboutText, { color: 'rgba(255,255,255,0.85)', marginBottom: 20 }]}>
+                SwiftLink makes shipping fast, reliable, and affordable. We connect senders and carriers seamlessly across Ethiopia.
+              </Text>
+              <TouchableOpacity style={styles.aboutCtaBtn} onPress={() => navigation.navigate('Contact')}>
+                <Text style={styles.aboutCtaText}>Connect With Us</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.aboutFeatures}>
+              {coreValues.slice(0, 2).map((feature, index) => (
+                <FeatureItem key={index} {...feature} />
+              ))}
+            </View>
+          </View>
+        </View>
+
       </ScrollView>
     </View>
   );

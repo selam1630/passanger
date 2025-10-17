@@ -35,15 +35,23 @@ export default function SignInScreen() {
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('sender'); 
   const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(false);
+const handleSignIn = async () => {
+  if (!email || !password) {
+    Alert.alert('Error', 'Please fill all fields');
+    return;
+  }
 
-  const handleSignIn = () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please fill all fields');
-      return;
-    }
-    login(email, password, role, navigation); 
-  };
-
+  setLoading(true); 
+  try {
+    await login(email, password, role, navigation); 
+  } catch (error) {
+    console.error('Login error:', error);
+    Alert.alert('Error', 'An error occurred. Please try again.');
+  } finally {
+    setLoading(false); 
+  }
+};
   return (
     <LinearGradient colors={[COLORS.BACKGROUND_LIGHT, COLORS.BACKGROUND_LIGHT]} style={styles.container}>
       <StatusBar barStyle="dark-content" />
@@ -107,9 +115,14 @@ export default function SignInScreen() {
               value={password}
               onChangeText={setPassword}
             />
-            <TouchableOpacity style={styles.signInBtn} onPress={handleSignIn}>
-              <Text style={styles.signInText}>Sign In</Text>
-            </TouchableOpacity>
+            <TouchableOpacity
+  style={[styles.signInBtn, loading && { opacity: 0.6 }]}
+  onPress={handleSignIn}
+  disabled={loading} 
+>
+  <Text style={styles.signInText}>{loading ? 'Signing In...' : 'Sign In'}</Text>
+</TouchableOpacity>
+
 
             <View style={styles.footer}>
               <Text style={styles.footerText}>Don’t have an account?</Text>
