@@ -15,13 +15,13 @@ import socket from './socket';
 import DashboardHeader from './dashboardheader';
 
 const COLORS = {
-  BACKGROUND_LIGHT: '#F7F8FC',       
+  BACKGROUND_LIGHT: '#F7F8FC',
   BACKGROUND_DARK: '#2D4B46',
   ACCENT_GOLD: '#FFB733',
   TEXT_DARK: '#333333',
   TEXT_LIGHT: '#FFFFFF',
   INPUT_BG: 'rgba(45, 75, 70, 0.05)',
-  CARD_BG: '#FFFFFF',                
+  CARD_BG: '#FFFFFF',
 };
 
 const SupportChat = ({ route }) => {
@@ -33,12 +33,10 @@ const SupportChat = ({ route }) => {
     socket.connect();
     socket.emit('joinRoom', userId);
     console.log(`🟢 Joined room: ${userId}`);
-
     socket.on('loadMessages', (msgs) => {
       const sorted = msgs.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
       setMessages(sorted);
     });
-
     socket.on('receiveMessage', (message) => {
       if (message.userId === userId) {
         setMessages((prev) => [...prev, message]);
@@ -46,10 +44,11 @@ const SupportChat = ({ route }) => {
     });
 
     return () => {
+      socket.emit('leaveRoom', userId);
       socket.off('loadMessages');
       socket.off('receiveMessage');
       socket.disconnect();
-      console.log('🔴 Disconnected from room');
+      console.log('🔴 Disconnected from support chat');
     };
   }, [userId]);
 
@@ -59,18 +58,22 @@ const SupportChat = ({ route }) => {
     const data = {
       userId,
       agentId: agentId || null,
-      sentBy: role || 'user', 
+      sentBy: role || 'user',
       message: input.trim(),
     };
 
     socket.emit('sendMessage', data);
     setInput('');
+    setMessages((prev) => [
+      ...prev,
+      { ...data, createdAt: new Date().toISOString(), id: Date.now().toString() },
+    ]);
   };
 
   const renderMessageItem = ({ item }) => {
     const isUser = item.sentBy === 'user';
     const time = item.createdAt 
-      ? new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+      ? new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       : '';
 
     return (
@@ -86,46 +89,42 @@ const SupportChat = ({ route }) => {
   };
 
   return (
-  <SafeAreaView style={styles.flexOne}>
-    <KeyboardAvoidingView
-      style={styles.flexOne}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <View style={styles.container}>
-        {/* 1️⃣ DashboardHeader goes here */}
-        <DashboardHeader user={{ fullName: 'User', email: 'user@example.com' }} />
-        {/* You can replace the user prop with the real user object if you have it */}
+    <SafeAreaView style={styles.flexOne}>
+      <KeyboardAvoidingView
+        style={styles.flexOne}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <View style={styles.container}>
+          <DashboardHeader user={{ fullName: 'User', email: 'user@example.com' }} />
 
-        {/* 2️⃣ Chat messages */}
-        <FlatList
-          data={messages}
-          keyExtractor={(item, index) => item.id || index.toString()}
-          renderItem={renderMessageItem}
-          contentContainerStyle={styles.flatListContent}
-        />
-
-        {/* 3️⃣ Input area */}
-        <View style={styles.inputContainer}>
-          <TextInput
-            value={input}
-            onChangeText={setInput}
-            placeholder="Type a message..."
-            placeholderTextColor="#999"
-            style={styles.input}
-            multiline
+          <FlatList
+            data={messages}
+            keyExtractor={(item, index) => item.id || index.toString()}
+            renderItem={renderMessageItem}
+            contentContainerStyle={styles.flatListContent}
           />
-          <TouchableOpacity 
-            style={styles.sendButton} 
-            onPress={sendMessage}
-            disabled={!input.trim()}
-          >
-            <Ionicons name="send" size={20} color={COLORS.BACKGROUND_DARK} />
-          </TouchableOpacity>
+
+          <View style={styles.inputContainer}>
+            <TextInput
+              value={input}
+              onChangeText={setInput}
+              placeholder="Type a message..."
+              placeholderTextColor="#999"
+              style={styles.input}
+              multiline
+            />
+            <TouchableOpacity 
+              style={styles.sendButton} 
+              onPress={sendMessage}
+              disabled={!input.trim()}
+            >
+              <Ionicons name="send" size={20} color={COLORS.BACKGROUND_DARK} />
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
-    </KeyboardAvoidingView>
-  </SafeAreaView>
-);
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
 };
 
 export default SupportChat;

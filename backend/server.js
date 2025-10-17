@@ -21,7 +21,6 @@ dotenv.config();
 const app = express();
 app.use(cors());
 app.use(express.json());
-
 app.use('/api/auth', authRoute);
 app.use('/api/otp', otpRoute);
 app.use('/api/sms', smsRoute);
@@ -34,10 +33,10 @@ app.use('/api/support', supportRoute);
 app.use('/api/points', pointsRoute);
 app.use("/api/carrier/profile", carrierProfileRoute);
 
-
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: '*' } });
-
+const io = new Server(server, { 
+  cors: { origin: '*', methods: ['GET', 'POST'] }
+});
 io.on('connection', (socket) => {
   console.log('🟢 New client connected:', socket.id);
   socket.on('joinRoom', async (roomId) => {
@@ -53,23 +52,33 @@ io.on('connection', (socket) => {
 
       socket.emit('loadMessages', messages);
     } catch (error) {
-      console.error('Error loading messages:', error);
+      console.error('❌ Error loading messages:', error);
+    }
+  });
+  socket.on('leaveRoom', (roomId) => {
+    try {
+      socket.leave(roomId);
+      console.log(`🚪 Socket ${socket.id} left room ${roomId}`);
+    } catch (error) {
+      console.error('❌ Error leaving room:', error);
     }
   });
   socket.on('sendMessage', async ({ userId, agentId, sentBy, message }) => {
     try {
-      if (!userId || !message) return;
+      if (!userId || !message?.trim()) return;
+
       const newMessage = await prisma.supportMessage.create({
         data: {
           userId,
           agentId: agentId || null,
           sentBy,
-          message,
+          message: message.trim(),
         },
       });
 
-      console.log(`💾 Message saved for user ${userId}`);
+      console.log(`💾 Message saved for user ${userId} (${sentBy})`);
       io.to(userId).emit('receiveMessage', newMessage);
+      io.emit('newUserMessage', newMessage);
     } catch (error) {
       console.error('❌ Error saving message:', error);
     }
@@ -78,7 +87,7 @@ io.on('connection', (socket) => {
     try {
       const whereFilter = agentId
         ? { OR: [{ agentId: null }, { agentId }] }
-        : { agentId: null };
+        : {};
 
       const usersWithMessages = await prisma.supportMessage.groupBy({
         by: ['userId'],
@@ -111,11 +120,9 @@ io.on('connection', (socket) => {
       socket.emit('usersList', []);
     }
   });
-
   socket.on('disconnect', () => {
     console.log('🔴 Client disconnected:', socket.id);
   });
 });
-
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));

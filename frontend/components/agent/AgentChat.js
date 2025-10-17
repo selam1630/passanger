@@ -1,92 +1,77 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
-  View, TextInput, TouchableOpacity, FlatList, Text,
-  KeyboardAvoidingView, Platform, StyleSheet,
-  SafeAreaView, ScrollView
+  View, 
+  Text, 
+  FlatList, 
+  TouchableOpacity, 
+  TextInput, 
+  KeyboardAvoidingView, 
+  Platform, 
+  StyleSheet 
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import socket from '../socket';
-import { LinearGradient } from 'expo-linear-gradient';
 import DashboardHeader from '../dashboardheader';
-import { AuthContext } from '../context/AuthContext';
 
 const COLORS = {
-  BACKGROUND_LIGHT: '#F7F8FC',
-  BACKGROUND_DARK: '#2D4B46',
-  ACCENT_GOLD: '#FFB733',
-  TEXT_DARK: '#333333',
-  TEXT_LIGHT: '#FFFFFF',
-  INPUT_BG: 'rgba(45, 75, 70, 0.05)',
-  CARD_BG: '#FFFFFF',
-  SECONDARY_TEXT: '#888',
-  SHADOW: 'rgba(0,0,0,0.1)',
+  BG: '#F7F8FC',
+  PRIMARY: '#2D4B46',
+  ACCENT: '#FFB733',
+  CARD: '#FFFFFF',
 };
 
-const ChatThreadLink = ({ user, onPress, selected }) => (
-  <TouchableOpacity
-    style={[styles.userCard, selected && styles.selectedUserCard]}
-    onPress={onPress}
-  >
-    <Text style={styles.userName}>{user.userName || 'User'}</Text>
-    <Text style={styles.lastMessage} numberOfLines={1}>
-      {user.lastMessage || 'New conversation'}
-    </Text>
-    {user.unreadCount > 0 && (
-      <View style={styles.unreadBadge}>
-        <Text style={styles.unreadText}>{user.unreadCount}</Text>
-      </View>
-    )}
-  </TouchableOpacity>
-);
+const AgentChat = ({ route }) => {
+  const { agentId } = route?.params || {};
 
-const AgentChat = () => {
-  const { user } = useContext(AuthContext);
-  const agentId = user?._id;
-
-  const [usersList, setUsersList] = useState([]);
+  const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
 
   useEffect(() => {
-    if (!agentId) return;
-
     socket.connect();
+    console.log(`🟢 Agent connected: ${agentId || 'No Agent ID'}`);
+
     socket.emit('getUsersWithMessages', agentId);
 
-    socket.on('usersList', (list) => setUsersList(list));
+    socket.on('usersList', (list) => {
+      setUsers(list.sort((a, b) => new Date(b.lastCreatedAt) - new Date(a.lastCreatedAt)));
+    });
+
+    socket.on('loadMessages', (msgs) => {
+      const sorted = msgs.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+      setMessages(sorted);
+    });
 
     socket.on('receiveMessage', (msg) => {
-      setUsersList((prev) =>
-        prev.map((u) =>
-          u.userId === msg.userId
-            ? { ...u, lastMessage: msg.message, unreadCount: u.unreadCount + 1 }
-            : u
-        )
-      );
-      if (selectedUser?.userId === msg.userId) {
+      if (selectedUser && msg.userId === selectedUser.userId) {
+        setMessages((prev) => [...prev, msg]);
+      }
+    });
+
+    socket.on('newUserMessage', (msg) => {
+      socket.emit('getUsersWithMessages', agentId);
+      if (selectedUser && msg.userId === selectedUser.userId) {
         setMessages((prev) => [...prev, msg]);
       }
     });
 
     return () => {
       socket.off('usersList');
+      socket.off('loadMessages');
       socket.off('receiveMessage');
+      socket.off('newUserMessage');
       socket.disconnect();
+      console.log('🔴 Agent disconnected');
     };
   }, [agentId, selectedUser]);
 
   const selectUser = (user) => {
+    if (selectedUser) {
+      socket.emit('leaveRoom', selectedUser.userId);
+    }
     setSelectedUser(user);
-    setMessages([]);
     socket.emit('joinRoom', user.userId);
-
-const handleLoadMessages = (msgs) => {
-  const sorted = msgs.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-  setMessages(sorted);
-};
-socket.once('loadMessages', handleLoadMessages);
-
   };
 
   const sendMessage = () => {
@@ -101,142 +86,100 @@ socket.once('loadMessages', handleLoadMessages);
 
     socket.emit('sendMessage', data);
     setInput('');
+    setMessages((prev) => [...prev, { ...data, createdAt: new Date().toISOString() }]);
   };
 
-  const renderMessageItem = ({ item }) => {
-    const isAgent = item.sentBy === 'agent';
-    const time = item.createdAt
-      ? new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      : '';
-    return (
-      <View style={[styles.messageRow, isAgent ? styles.agentRow : styles.userRow]}>
-        <View style={[styles.messageBubble, isAgent ? styles.agentBubble : styles.userBubble]}>
-          <Text style={isAgent ? styles.agentMessageText : styles.userMessageText}>
-            {item.message}
-          </Text>
-          <Text style={styles.timestamp}>{time}</Text>
-        </View>
-      </View>
-    );
-  };
+  const renderUser = ({ item }) => (
+    <TouchableOpacity 
+      style={[
+        styles.userItem,
+        selectedUser?.userId === item.userId && styles.selectedUser
+      ]}
+      onPress={() => selectUser(item)}
+    >
+      <Text style={styles.userName}>{item.userName}</Text>
+      <Text style={styles.lastMessage}>{item.lastMessage}</Text>
+    </TouchableOpacity>
+  );
+
+  const renderMessage = ({ item }) => (
+    <View style={[
+      styles.messageBubble,
+      item.sentBy === 'agent' ? styles.agentMsg : styles.userMsg
+    ]}>
+      <Text>{item.message}</Text>
+      <Text style={styles.timeText}>
+        {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+      </Text>
+    </View>
+  );
 
   return (
-    <LinearGradient colors={[COLORS.BACKGROUND_LIGHT, COLORS.BACKGROUND_LIGHT]} style={styles.container}>
-      <SafeAreaView style={styles.mainWrapper}>
-        {Platform.OS === 'web' && (
-          <View style={styles.sidebar}>
-            <Text style={styles.sidebarHeader}>Live Threads</Text>
-            <ScrollView>
-              {usersList.map((user) => (
-                <ChatThreadLink
-                  key={user.userId}
-                  user={user}
-                  selected={selectedUser?.userId === user.userId}
-                  onPress={() => selectUser(user)}
-                />
-              ))}
-            </ScrollView>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+    <View style={styles.leftPane}>
+      <Text style={styles.title}>Users</Text>
+      <FlatList
+        data={users}
+        renderItem={renderUser}
+        keyExtractor={(item) => item.userId}
+      />
+    </View>
+
+    <View style={styles.chatPane}>
+      {/* ✅ Add DashboardHeader here */}
+      <DashboardHeader user={{ fullName: 'Agent Name', email: 'agent@example.com' }} />
+
+      {selectedUser ? (
+        <>
+          <Text style={styles.chatHeader}>{selectedUser.userName}</Text>
+          <FlatList
+            data={messages}
+            renderItem={renderMessage}
+            keyExtractor={(item, index) => item.id || index.toString()}
+          />
+          <View style={styles.inputContainer}>
+            <TextInput
+              value={input}
+              onChangeText={setInput}
+              placeholder="Type a reply..."
+              style={styles.input}
+            />
+            <TouchableOpacity onPress={sendMessage} disabled={!input.trim()}>
+              <Ionicons name="send" size={24} color={COLORS.ACCENT} />
+            </TouchableOpacity>
           </View>
-        )}
-
-        <View style={styles.chatArea}>
-          <DashboardHeader user={{ _id: agentId }} />
-
-          {Platform.OS !== 'web' && (
-            <ScrollView horizontal style={styles.usersContainer}>
-              {usersList.map((user) => (
-                <ChatThreadLink
-                  key={user.userId}
-                  user={user}
-                  selected={selectedUser?.userId === user.userId}
-                  onPress={() => selectUser(user)}
-                />
-              ))}
-            </ScrollView>
-          )}
-
-          {selectedUser ? (
-            <KeyboardAvoidingView style={styles.flexOne} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-              <FlatList
-                data={messages}
-                keyExtractor={(item, index) => item.id || index.toString()}
-                renderItem={renderMessageItem}
-                contentContainerStyle={styles.flatListContent}
-              />
-              <View style={styles.inputContainer}>
-                <TextInput
-                  value={input}
-                  onChangeText={setInput}
-                  placeholder="Type a message..."
-                  placeholderTextColor={COLORS.SECONDARY_TEXT}
-                  style={styles.input}
-                  multiline
-                />
-                <TouchableOpacity style={styles.sendButton} onPress={sendMessage} disabled={!input.trim()}>
-                  <Ionicons name="send" size={20} color={COLORS.BACKGROUND_DARK} />
-                </TouchableOpacity>
-              </View>
-            </KeyboardAvoidingView>
-          ) : (
-            <View style={styles.selectUserPrompt}>
-              <Text>Select a user to start chatting</Text>
-            </View>
-          )}
+        </>
+      ) : (
+        <View style={styles.noChat}>
+          <Text>Select a user to start chatting</Text>
         </View>
-      </SafeAreaView>
-    </LinearGradient>
-  );
+      )}
+    </View>
+  </KeyboardAvoidingView>
+);
+
 };
 
 export default AgentChat;
 
 const styles = StyleSheet.create({
-  flexOne: { flex: 1 },
-  container: { flex: 1 },
-  mainWrapper: { flex: 1, flexDirection: Platform.OS === 'web' ? 'row' : 'column' },
-  sidebar: { width: 250, backgroundColor: COLORS.BACKGROUND_DARK, padding: 10 },
-  sidebarHeader: { color: COLORS.ACCENT_GOLD, fontSize: 16, fontWeight: 'bold', marginBottom: 10 },
-  chatArea: { flex: 1 },
-  usersContainer: { maxHeight: 120, paddingVertical: 10, paddingHorizontal: 5 },
-  userCard: {
-    backgroundColor: COLORS.CARD_BG,
-    padding: 12,
-    marginHorizontal: 6,
-    borderRadius: 15,
-    minWidth: 140,
-    shadowColor: COLORS.SHADOW,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
-    position: 'relative',
-  },
-  selectedUserCard: { borderWidth: 2, borderColor: COLORS.ACCENT_GOLD },
-  userName: { fontWeight: 'bold', fontSize: 14, color: COLORS.BACKGROUND_DARK },
-  lastMessage: { fontSize: 12, color: COLORS.SECONDARY_TEXT, marginTop: 3 },
-  unreadBadge: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    backgroundColor: 'red',
-    borderRadius: 8,
-    paddingHorizontal: 5,
-    minWidth: 16,
-    alignItems: 'center',
-  },
-  unreadText: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
-  flatListContent: { padding: 10 },
-  messageRow: { marginVertical: 5, maxWidth: '80%' },
-  userRow: { alignSelf: 'flex-start' },
-  agentRow: { alignSelf: 'flex-end' },
-  messageBubble: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 15 },
-  userBubble: { backgroundColor: COLORS.CARD_BG, borderWidth: 1, borderColor: COLORS.INPUT_BG },
-  agentBubble: { backgroundColor: COLORS.ACCENT_GOLD },
-  userMessageText: { fontSize: 15, color: COLORS.TEXT_DARK },
-  agentMessageText: { fontSize: 15, color: COLORS.BACKGROUND_DARK },
-  timestamp: { fontSize: 10, color: COLORS.BACKGROUND_DARK, opacity: 0.7, marginTop: 3, alignSelf: 'flex-end' },
-  inputContainer: { flexDirection: 'row', alignItems: 'center', padding: 10, backgroundColor: COLORS.CARD_BG, borderTopWidth: 1, borderTopColor: COLORS.INPUT_BG },
-  input: { flex: 1, backgroundColor: COLORS.INPUT_BG, borderRadius: 25, paddingHorizontal: 15, paddingVertical: Platform.OS === 'ios' ? 12 : 8, marginRight: 10, maxHeight: 100, fontSize: 16, color: COLORS.TEXT_DARK },
-  sendButton: { backgroundColor: COLORS.ACCENT_GOLD, width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
-  selectUserPrompt: { flex: 1, justifyContent: 'center', alignItems: 'center', color: COLORS.SECONDARY_TEXT },
+  container: { flex: 1, flexDirection: 'row', backgroundColor: COLORS.BG },
+  leftPane: { width: '35%', backgroundColor: COLORS.CARD, padding: 10, borderRightWidth: 1, borderColor: '#ddd' },
+  chatPane: { flex: 1, padding: 10 },
+  title: { fontSize: 18, fontWeight: 'bold', marginBottom: 10 },
+  userItem: { padding: 10, borderBottomWidth: 1, borderBottomColor: '#eee' },
+  selectedUser: { backgroundColor: '#FFEBC1' },
+  userName: { fontWeight: 'bold' },
+  lastMessage: { fontSize: 12, color: '#555' },
+  chatHeader: { fontSize: 16, fontWeight: 'bold', marginBottom: 10 },
+  messageBubble: { padding: 8, marginVertical: 4, borderRadius: 8, maxWidth: '80%' },
+  userMsg: { backgroundColor: '#FFF', alignSelf: 'flex-start' },
+  agentMsg: { backgroundColor: COLORS.ACCENT, alignSelf: 'flex-end' },
+  timeText: { fontSize: 10, color: '#333', opacity: 0.6, marginTop: 3, alignSelf: 'flex-end' },
+  inputContainer: { flexDirection: 'row', alignItems: 'center', borderTopWidth: 1, borderColor: '#ddd', paddingTop: 5 },
+  input: { flex: 1, padding: 8, borderWidth: 1, borderColor: '#ccc', borderRadius: 8, marginRight: 8 },
+  noChat: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 });
