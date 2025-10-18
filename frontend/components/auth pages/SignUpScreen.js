@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  ActivityIndicator
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
@@ -31,6 +32,7 @@ export default function SignUpScreen() {
   const [phone, setPhone] = useState('');
   const [nationalID, setNationalID] = useState('');
   const [role, setRole] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleSignUp = async () => {
     if (!fullName || !email || !password || !phone || !nationalID || !role) {
@@ -39,6 +41,7 @@ export default function SignUpScreen() {
     }
 
     try {
+      setLoading(true);
       const response = await fetch('http://localhost:5000/api/auth/register', {
         method: 'POST',
         headers: {
@@ -55,6 +58,7 @@ export default function SignUpScreen() {
       });
 
       const data = await response.json();
+      setLoading(false);
 
       if (response.ok) {
         console.log('Registration successful:', data);
@@ -64,6 +68,7 @@ export default function SignUpScreen() {
         Alert.alert('Error', data.message || 'Registration failed');
       }
     } catch (error) {
+      setLoading(false);
       console.error('Error registering:', error);
       Alert.alert('Error', 'An error occurred. Please try again.');
     }
@@ -136,8 +141,12 @@ export default function SignUpScreen() {
                 <Picker.Item label="Receiver" value="receiver" color={COLORS.TEXT_DARK} />
               </Picker>
             </View>
-            <TouchableOpacity style={styles.signUpBtn} onPress={handleSignUp}>
-              <Text style={styles.signUpText}>Sign Up</Text>
+            <TouchableOpacity style={[styles.signUpBtn, loading && { opacity: 0.8 }]} onPress={handleSignUp} disabled={loading}>
+              {loading ? (
+                <ActivityIndicator size="small" color={COLORS.BACKGROUND_DARK} />
+              ) : (
+                <Text style={styles.signUpText}>Sign Up</Text>
+              )}
             </TouchableOpacity>
 
             <View style={styles.footer}>
