@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
   View,
   Text,
@@ -10,9 +10,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  ActivityIndicator
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AuthContext } from '../../App';
+
 const COLORS = {
   BACKGROUND_LIGHT: '#F7F8FC',      
   BACKGROUND_DARK: '#2D4B46',
@@ -26,49 +30,58 @@ const COLORS = {
 
 export default function SignInScreen() {
   const navigation = useNavigation();
+  const { signIn } = useContext(AuthContext);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState(''); 
-  
+  const [loading, setLoading] = useState(false);
+
   const handleSignIn = async () => {
+    if (!email || !password) {
+      setMessage('Please enter email and password.');
+      return;
+    }
+
     try {
+      setLoading(true);
       const response = await fetch('http://localhost:5000/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
       const data = await response.json();
+      setLoading(false);
 
       if (response.ok) {
-        console.log('Login successful:', data);
         setMessage('Login successful!');
-        const token = data.token;
+        await AsyncStorage.setItem('userToken', data.token);
+        signIn(data.token);
+
         const userRes = await fetch('http://localhost:5000/api/auth/me', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${data.token}`,
           },
         });
 
         const userData = await userRes.json();
 
         if (userData.role === 'carrier') {
-          navigation.navigate('CarrierDashboard', { token, user: userData });
+          navigation.navigate('CarrierDashboard', { token: data.token, user: userData });
         } else if (userData.role === 'sender') {
-          navigation.navigate('senderDashboard', { token, user: userData });
+          navigation.navigate('senderDashboard', { token: data.token, user: userData });
         } else if (userData.role === 'receiver') {
-          navigation.navigate('ReceiverDashboard', { token, user: userData });
+          navigation.navigate('ReceiverDashboard', { token: data.token, user: userData });
         } else {
           Alert.alert('Error', 'Unknown role. Cannot navigate.');
         }
 
       } else {
-        console.error('Login failed:', data.message || data);
         setMessage(data.message || 'Login failed');
       }
     } catch (error) {
-      console.error('Error logging in:', error);
+      setLoading(false);
       setMessage('An error occurred. Please try again.');
     }
   };
@@ -117,8 +130,12 @@ export default function SignInScreen() {
               value={password}
               onChangeText={setPassword}
             />
-            <TouchableOpacity style={styles.signInBtn} onPress={handleSignIn}>
-              <Text style={styles.signInText}>Sign In</Text>
+            <TouchableOpacity style={[styles.signInBtn, loading && { opacity: 0.7 }]} onPress={handleSignIn} disabled={loading}>
+              {loading ? (
+                <ActivityIndicator size="small" color={COLORS.BACKGROUND_DARK} />
+              ) : (
+                <Text style={styles.signInText}>Sign In</Text>
+              )}
             </TouchableOpacity>
             <View style={styles.footer}>
               <Text style={styles.footerText}>Don’t have an account?</Text>
