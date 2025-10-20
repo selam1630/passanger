@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import { applySecurityMiddlewares } from './middlewares/security.js';
 import authRoute from './routes/authRoute.js';
 import otpRoute from './routes/otpRoute.js';
 import smsRoute from './routes/smsRoute.js';
@@ -11,6 +12,11 @@ import senderRoute from './routes/senderRoute.js';
 dotenv.config();
 
 const app = express();
+
+// Apply comprehensive security middlewares
+applySecurityMiddlewares(app);
+
+// Existing middlewares
 app.use(cors());
 app.use(express.json());
 
